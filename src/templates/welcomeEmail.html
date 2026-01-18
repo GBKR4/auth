@@ -1,1 +1,28 @@
 <!-- Welcome email template -->
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+</head>
+<body style="font-family: Arial, sans-serif;">
+  <h1>Welcome, {{username}}!</h1>
+
+  <p>Your account has been successfully verified.</p>
+
+  <p>You can now log in and start using our service.</p>
+
+  <a href="{{loginLink}}"
+     style="display:inline-block;
+            padding:12px 20px;
+            background-color:#2563eb;
+            color:#ffffff;
+            text-decoration:none;
+            border-radius:5px;">
+    Login Now
+  </a>
+
+  <p style="margin-top:20px; font-size:14px; color:#555;">
+    If you didn’t create this account, you can safely ignore this email.
+  </p>
+</body>
+</html>
