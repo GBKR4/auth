@@ -37,13 +37,6 @@ export const initPool = () => {
     process.exit(-1);
   });
 
-  // Graceful shutdown
-  process.on('SIGINT', async () => {
-    await pool.end();
-    logger.info('PostgreSQL pool has ended');
-    process.exit(0);
-  });
-
   return pool;
 };
 
