@@ -1,8 +1,16 @@
-import { Router } from 'express';
 import express from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import routes from './routes/index.js';
+import { notFound, errorHandler } from './middlewares/errorHandlers.js';
 
 const app = express();
-const router = Router();
-
+app.use(cors());
+app.use(helmet());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use('/api', routes);
+app.use(notFound);
+app.use(errorHandler);
 
 export default app;
