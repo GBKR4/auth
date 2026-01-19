@@ -1,5 +1,5 @@
 // User controller - handles user profile management
-import pool from '../config/db.js';
+import pool from '../config/database.js';
 import User from '../models/User.js';
 import hashService from '../services/hashService.js';
 
