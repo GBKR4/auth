@@ -1,6 +1,5 @@
 // Authentication middleware - JWT verification
 import jwt from 'jsonwebtoken';
-import '../config.js';
 import logger from '../utils/logger.js';
 
 export const authenticateToken = (req, res, next) => {
@@ -14,13 +13,15 @@ export const authenticateToken = (req, res, next) => {
   };
 
   const token = authHeader.split(' ')[1];
-  const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
-
-  if(!decoded) {
-    return res.status(401).json({ error: 'Unauthorized' });
+  
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET);
+    req.user = decoded;
+    next();
+  } catch (error) {
+    logger.error('Token verification failed', { error: error.message });
+    return res.status(401).json({ error: 'Invalid or expired token' });
   }
-  req.user = decoded;
-  next();
 }; 
 
 export const authorizeRoles = (...roles) => {

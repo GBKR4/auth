@@ -1,7 +1,6 @@
 // Token service - JWT generation/validation
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
-import '../config.js';
 
 export const generateAccessToken = (user) => {
   const payload = {
@@ -10,32 +9,30 @@ export const generateAccessToken = (user) => {
     role: user.role
   };
 
-  return jwt.sign(payload, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '15m' });
+  return jwt.sign(payload, process.env.JWT_ACCESS_SECRET, { 
+    expiresIn: process.env.JWT_ACCESS_EXPIRY || '15m' 
+  });
 };
 
-export const generateRefreshToken = async (user) => {
-  return jwt.sign({id: user.id, type: user.type}, process.env.REFRESH_TOKEN_SECRET, { expiresIn: '7d' });
+export const generateRefreshToken = (user) => {
+  return jwt.sign(
+    { id: user.id, email: user.email, role: user.role }, 
+    process.env.JWT_REFRESH_SECRET, 
+    { expiresIn: process.env.JWT_REFRESH_EXPIRY || '7d' }
+  );
 };
 
 export const verifyAccessToken = (token) => {
-  const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
-
   try {
-    if(decoded) {
-      return decoded;
-    }
+    return jwt.verify(token, process.env.JWT_ACCESS_SECRET);
   } catch (error) {
     throw new Error('Invalid access token');
   }
 };
 
 export const verifyRefreshToken = (token) => {
-  const decoded = jwt.verify(token, process.env.REFRESH_TOKEN_SECRET);
-
   try {
-    if(decoded) {
-      return decoded;
-    }
+    return jwt.verify(token, process.env.JWT_REFRESH_SECRET);
   } catch (error) {
     throw new Error('Invalid refresh token');
   }
@@ -50,6 +47,15 @@ export const generatePasswordResetToken = () => {
 }
 
 export const hashToken = (token) => {
-  return crypto.createHash('sha256').
-    update(token).digest('hex');   
+  return crypto.createHash('sha256').update(token).digest('hex');   
 }
+
+export default {
+  generateAccessToken,
+  generateRefreshToken,
+  verifyAccessToken,
+  verifyRefreshToken,
+  generateVerificationToken,
+  generatePasswordResetToken,
+  hashToken
+};

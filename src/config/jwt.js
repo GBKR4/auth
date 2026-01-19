@@ -1,11 +1,11 @@
 // JWT configuration
 
 export const accessTokenSecret = () => {
-  return process.env.ACCESS_TOKEN_SECRET
+  return process.env.JWT_ACCESS_SECRET
 }
 
 export const refreshTokenSecret = () => {
-  return process.env.REFRESH_TOKEN_SECRET
+  return process.env.JWT_REFRESH_SECRET
 }
 
 export const accessTokenExpiry = () => {

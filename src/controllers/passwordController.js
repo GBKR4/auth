@@ -1,5 +1,5 @@
 // Password controller - handles password reset/change
-import pool from '../config/database.js';
+import { getPool } from '../config/database.js';
 import User from '../models/User.js';
 import hashService from '../services/hashService.js';
 import tokenService from '../services/tokenService.js';
@@ -12,12 +12,13 @@ export const forgotPassword = async (req, res) => {
 
   const user = await User.findByEmail(email);
   if (!user) {
-    return true;
+    // Don't reveal if user exists or not for security
+    return res.status(200).json({ message: 'Password reset email sent if the email exists' });
   }
 
   const resetToken = tokenService.generatePasswordResetToken();
   const expiresAt = new Date(Date.now() + 1 * 60 * 60 * 1000); // 1 hour
-  const verificationToken = await Token.verificationToken(user.id, resetToken, 'password_reset', expiresAt);
+  const verificationToken = await Token.createVerificationToken(user.id, resetToken, 'password_reset', expiresAt);
   await emailService.sendPasswordResetEmail(user.email, resetToken);
   return res.status(200).json({ message: 'Password reset email sent' });
 };

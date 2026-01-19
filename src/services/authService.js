@@ -18,11 +18,11 @@ export const registerUser = async (userData) => {
     throw new Error('Username already taken');  
   }
 
-  const passwordHash = await hashPassword(password);
+  const password_hash = await hashPassword(password);
   const newUser = await create({
     email,
     username,
-    passwordHash,
+    password_hash,
     first_name,
     last_name,
   });
@@ -83,3 +83,11 @@ export const completePasswordReset = async (token, newPassword) => {
   await markTokenAsUsed(token);
   return true; 
 }
+
+export default {
+  registerUser,
+  loginUser,
+  verifyEmail,
+  initiatePasswordReset,
+  completePasswordReset
+};

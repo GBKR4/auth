@@ -23,7 +23,7 @@ export const sendEmail = async (to, subject, html) => {
 };
 
 export const sendVerificationEmail = async (email, token) => {
-  const verificationLink = `${process.env.FRONTEND_URL}/verify-email/${token}`;
+  const verificationLink = `${process.env.CLIENT_URL}/verify-email/${token}`;
   const subject = 'Verify Your Email Address';
   const html = `<p>Please verify your email by clicking the link below:</p>
                 <a href="${verificationLink}">Verify Email</a>`;
@@ -31,7 +31,7 @@ export const sendVerificationEmail = async (email, token) => {
 };
 
 export const sendPasswordResetEmail = async (email, token) => {
-  const resetLink = `${process.env.FRONTEND_URL}/reset-password/${token}`;
+  const resetLink = `${process.env.CLIENT_URL}/reset-password/${token}`;
   const subject = 'Reset Your Password';
   const html = `<p>You can reset your password by clicking the link below:</p>
                 <a href="${resetLink}">Reset Password</a>`;
@@ -43,4 +43,11 @@ export const sendWelcomeEmail = async (email, firstName) => {
   const html = `<p>Hi ${firstName},</p>
                 <p>Welcome to our service! We're glad to have you on board.</p>`;
   await sendEmail(email, subject, html);
+};
+
+export default {
+  sendEmail,
+  sendVerificationEmail,
+  sendPasswordResetEmail,
+  sendWelcomeEmail
 };

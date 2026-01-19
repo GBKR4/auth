@@ -1,4 +1,8 @@
 {
+  "name": "auth-api",
+  "version": "1.0.0",
+  "description": "Authentication API with JWT, email verification, and PostgreSQL",
+  "type": "module",
   "scripts": {
     "dev": "nodemon server.js",
     "start": "node server.js",

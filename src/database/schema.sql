@@ -46,7 +46,8 @@ CREATE TABLE IF NOT EXISTS sessions (
     user_agent TEXT,
     expires_at TIMESTAMP NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    last_activity TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    last_activity_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    revoked BOOLEAN DEFAULT FALSE
 );
 
 -- Login Attempts Table (for rate limiting and security monitoring)
@@ -78,6 +79,9 @@ BEGIN
     RETURN NEW;
 END;
 $$ language 'plpgsql';
+
+-- Drop existing trigger if exists before creating
+DROP TRIGGER IF EXISTS update_users_updated_at ON users;
 
 -- Trigger to call the function before update on users table
 CREATE TRIGGER update_users_updated_at 

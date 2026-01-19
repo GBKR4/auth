@@ -1,7 +1,7 @@
 // User routes
 import { Router } from 'express';
-import userController from '../controllers/userController.js';
-import { authorizeRoles, authenticateToken } from '../middlewares/auth';
+import * as userController from '../controllers/userController.js';
+import { authorizeRoles, authenticateToken } from '../middlewares/auth.js';
 
 const router = Router();
 

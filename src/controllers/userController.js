@@ -1,10 +1,11 @@
 // User controller - handles user profile management
-import pool from '../config/database.js';
+import { getPool } from '../config/database.js';
 import User from '../models/User.js';
 import hashService from '../services/hashService.js';
 
 // Get user profile
 export const getUserProfile = async (req, res) => {
+  const pool = getPool();
   const userId = req.user.id;
 
   const user = await pool.query('SELECT id, email, username, first_name, last_name, role, is_verified, created_at, updated_at FROM users WHERE id = $1', [userId]);
@@ -27,6 +28,7 @@ export const getUserProfile = async (req, res) => {
 
 // Update user profile
 export const updateUserProfile = async (req, res) => {
+  const pool = getPool();
   const userId = req.user.id;
   
   const result = await pool.query('SELECT * FROM users WHERE id = $1', [userId]);
@@ -51,6 +53,7 @@ export const updateUserProfile = async (req, res) => {
 
 // change user password
 export const changeUserPassword = async (req, res) => {
+  const pool = getPool();
   const userId = req.user.id;
 
   const result = await pool.query('SELECT * FROM users WHERE id = $1', [userId]);
@@ -71,6 +74,7 @@ export const changeUserPassword = async (req, res) => {
 
 // Delete user account
 export const deleteUserAccount = async (req, res) => {
+  const pool = getPool();
   const userId = req.user.id;
   const result = await pool.query('SELECT * FROM users WHERE id = $1', [userId]);
 
@@ -83,6 +87,7 @@ export const deleteUserAccount = async (req, res) => {
 
 // getAllUsers - for admin
 export const getAllUsers = async (req, res) => {
+  const pool = getPool();
   const result = await pool.query('SELECT id, email, username, first_name, last_name, role, is_verified, created_at, updated_at FROM users');
 
   return res.status(200).json(result.rows);
