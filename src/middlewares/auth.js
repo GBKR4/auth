@@ -1,10 +1,15 @@
 // Authentication middleware - JWT verification
 import jwt from 'jsonwebtoken';
 import '../config.js';
+import logger from '../utils/logger.js';
 
 export const authenticateToken = (req, res, next) => {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    logger.warn('Missing or invalid authorization header', {
+      path: req.path,
+      ip: req.ip
+    });
     return res.status(401).json({ error: 'Unauthorized' });
   };
 

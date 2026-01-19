@@ -1,7 +1,14 @@
 // Global error handler middleware
+import logger from '../utils/logger.js';
 
 export const errorHandler = (err, req, res, next) => {
-  console.error('Error:', err);
+  logger.error('Application error', {
+    error: err.message,
+    stack: err.stack,
+    path: req.path,
+    method: req.method,
+    ip: req.ip
+  });
 
   // Default error
   let statusCode = err.statusCode || 500;
@@ -52,5 +59,10 @@ export const errorHandler = (err, req, res, next) => {
 };
 
 export const notFound = (req, res, next) => {
+  logger.warn('Route not found', {
+    path: req.path,
+    method: req.method,
+    ip: req.ip
+  });
   res.status(404).json({ error: 'Route not found' });
 };

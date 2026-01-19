@@ -3,6 +3,7 @@ import User from '../models/User.js';
 import Token from '../models/Token.js';
 import tokenService from '../services/tokenService.js';
 import hashService from '../services/hashService.js';
+import logger from '../utils/logger.js';
 
 // Register new user
 export const register = async (req, res) => {
@@ -46,6 +47,8 @@ export const register = async (req, res) => {
     // TODO: Send verification email
     // await emailService.sendVerificationEmail(user.email, verificationToken);
 
+    logger.info('User registered', { email, username, userId: user.id });
+
     res.status(201).json({
       message: 'User registered successfully. Please check your email to verify your account.',
       user: {
@@ -55,7 +58,7 @@ export const register = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('Register error:', error);
+    logger.error('Registration failed', { error: error.message, email: req.body.email });
     res.status(500).json({ error: 'Registration failed' });
   }
 };
@@ -68,12 +71,14 @@ export const login = async (req, res) => {
     // Find user by email
     const user = await User.findByEmail(email);
     if (!user) {
+      logger.warn('Failed login attempt - user not found', { email, ip: req.ip });
       return res.status(401).json({ error: 'Invalid email or password' });
     }
 
     // Verify password
     const isValidPassword = await hashService.comparePassword(password, user.password_hash);
     if (!isValidPassword) {
+      logger.warn('Failed login attempt - invalid password', { email, ip: req.ip });
       return res.status(401).json({ error: 'Invalid email or password' });
     }
 
@@ -98,6 +103,8 @@ export const login = async (req, res) => {
     // Update last login
     await User.updateLastLogin(user.id);
 
+    logger.info('User logged in', { userId: user.id, email: user.email, ip: req.ip });
+
     res.json({
       message: 'Login successful',
       accessToken,
@@ -110,7 +117,7 @@ export const login = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('Login error:', error);
+    logger.error('Login failed', { error: error.message, email: req.body.email });
     res.status(500).json({ error: 'Login failed' });
   }
 };
@@ -126,6 +133,8 @@ export const logout = async (req, res) => {
 
     // Revoke refresh token
     await Token.revokeRefreshToken(refreshToken);
+
+    logger.info('User logged out', { userId: req.user?.id });
 
     res.json({ message: 'Logout successful' });
   } catch (error) {
