@@ -1,6 +1,6 @@
 // Email configuration
 
-export const emailConfig = {
+export const getEmailConfig = () => ({
   host: process.env.EMAIL_HOST || 'smtp.gmail.com',
   port: parseInt(process.env.EMAIL_PORT) || 587,
   secure: process.env.EMAIL_SECURE === 'true',
@@ -9,4 +9,4 @@ export const emailConfig = {
     pass: process.env.EMAIL_PASSWORD,
   },
   from: process.env.EMAIL_FROM || 'noreply@yourapp.com',
-};
+});

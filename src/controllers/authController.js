@@ -3,6 +3,7 @@ import User from '../models/User.js';
 import Token from '../models/Token.js';
 import tokenService from '../services/tokenService.js';
 import hashService from '../services/hashService.js';
+import emailService from '../services/emailService.js';
 import logger from '../utils/logger.js';
 
 // Register new user
@@ -44,8 +45,8 @@ export const register = async (req, res) => {
       expiresAt
     );
 
-    // TODO: Send verification email
-    // await emailService.sendVerificationEmail(user.email, verificationToken);
+    // Send verification email
+    await emailService.sendVerificationEmail(user.email, verificationToken);
 
     logger.info('User registered', { email, username, userId: user.id });
 
@@ -230,8 +231,8 @@ export const resendVerification = async (req, res) => {
       expiresAt
     );
 
-    // TODO: Send verification email
-    // await emailService.sendVerificationEmail(user.email, verificationToken);
+    // Send verification email
+    await emailService.sendVerificationEmail(user.email, verificationToken);
 
     res.json({ message: 'Verification email sent. Please check your inbox.' });
   } catch (error) {

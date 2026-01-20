@@ -1,25 +1,34 @@
 // Email service
 import nodemailer from 'nodemailer';
-import { emailConfig } from '../config/email.js';
+import { getEmailConfig } from '../config/email.js';
 
-export const transporter = nodemailer.createTransport({
-  host: emailConfig.host,
-  port: emailConfig.port,
-  secure: emailConfig.secure,
-  auth: {
-    user: emailConfig.auth.user,
-    pass: emailConfig.auth.pass,
-  },
-});
+let transporter = null;
+
+const getTransporter = () => {
+  if (!transporter) {
+    const emailConfig = getEmailConfig();
+    transporter = nodemailer.createTransport({
+      host: emailConfig.host,
+      port: emailConfig.port,
+      secure: emailConfig.secure,
+      auth: {
+        user: emailConfig.auth.user,
+        pass: emailConfig.auth.pass,
+      },
+    });
+  }
+  return transporter;
+};
 
 export const sendEmail = async (to, subject, html) => {
+  const emailConfig = getEmailConfig();
   const mailOptions = {
     from: emailConfig.from,
     to,
     subject,
     html,
   };
-  await transporter.sendMail(mailOptions);
+  await getTransporter().sendMail(mailOptions);
 };
 
 export const sendVerificationEmail = async (email, token) => {
