@@ -88,3 +88,15 @@ CREATE TRIGGER update_users_updated_at
     BEFORE UPDATE ON users
     FOR EACH ROW 
     EXECUTE FUNCTION update_updated_at_column();
+
+-- Add to your users table
+ALTER TABLE users 
+ADD COLUMN google_id VARCHAR(255) UNIQUE,
+ADD COLUMN auth_provider VARCHAR(50) DEFAULT 'local',
+ADD COLUMN profile_picture VARCHAR(500);
+
+-- Make password_hash nullable for OAuth users
+ALTER TABLE users ALTER COLUMN password_hash DROP NOT NULL;
+
+-- Create index
+CREATE INDEX IF NOT EXISTS idx_users_google_id ON users(google_id);
