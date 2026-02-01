@@ -11,9 +11,13 @@ initPool();
 //intialize database tables
 await initializeDatabase();
 
-const server = app.listen(PORT, () => {
+const server = app.listen(PORT, '0.0.0.0', () => {
   logger.info(`Server running on port ${PORT}`);
+  console.log(`✓ Server is ready and listening on http://localhost:${PORT}`);
 });
+
+// Prevent process from exiting
+process.stdin.resume();
 
 // Handle server errors
 server.on('error', (error) => {
@@ -21,14 +25,19 @@ server.on('error', (error) => {
   process.exit(1);
 });
 
-// Handle uncaught exceptions
-process.on('uncaughtException', (error) => {
-  logger.error('Uncaught exception:', error);
-  process.exit(1);
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  logger.info('SIGTERM received, closing server...');
+  server.close(() => {
+    logger.info('Server closed');
+    process.exit(0);
+  });
 });
 
-// Handle unhandled rejections
-process.on('unhandledRejection', (reason, promise) => {
-  logger.error('Unhandled rejection at:', promise, 'reason:', reason);
-  process.exit(1);
+process.on('SIGINT', () => {
+  logger.info('SIGINT received, closing server...');
+  server.close(() => {
+    logger.info('Server closed');
+    process.exit(0);
+  });
 });
