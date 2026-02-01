@@ -1,0 +1,98 @@
+════════════════════════════════════════════════════════════
+  FIXING GOOGLE OAUTH ERROR: redirect_uri_mismatch
+════════════════════════════════════════════════════════════
+
+PROBLEM:
+  You're getting "Error 400: redirect_uri_mismatch" because
+  the redirect URI in Google Cloud Console doesn't match
+  your app's callback URL.
+
+YOUR APP'S CALLBACK URL:
+  http://localhost:5000/api/auth/google/callback
+
+════════════════════════════════════════════════════════════
+  HOW TO FIX (5 Simple Steps)
+════════════════════════════════════════════════════════════
+
+Step 1: Open Google Cloud Console
+  → Go to: https://console.cloud.google.com/
+
+Step 2: Select Your Project
+  → Look for the project with Client ID starting with:
+    1046770683717...
+
+Step 3: Go to Credentials
+  → Click: APIs & Services > Credentials
+
+Step 4: Edit Your OAuth 2.0 Client
+  → Find your OAuth 2.0 Client ID in the list
+  → Click on it to open the edit page
+
+Step 5: Add the Redirect URI
+  → Scroll down to "Authorized redirect URIs"
+  → Click "+ ADD URI"
+  → Paste this EXACT URL:
+
+    http://localhost:5000/api/auth/google/callback
+
+  → Click SAVE at the bottom
+
+════════════════════════════════════════════════════════════
+  IMPORTANT NOTES
+════════════════════════════════════════════════════════════
+
+✓ Copy the URL exactly as shown above
+✓ Use http:// (NOT https://)
+✓ Use port 5000 (NOT 3000)
+✓ Include /api in the path
+✓ NO trailing slash at the end
+✓ Case sensitive - copy exactly
+
+WRONG URLs (Don't use these):
+  ✗ http://localhost:3000/api/auth/google/callback  ← Wrong port
+  ✗ http://localhost:5000/auth/google/callback      ← Missing /api
+  ✗ http://localhost:5000/api/auth/google/callback/ ← Trailing slash
+  ✗ https://localhost:5000/api/auth/google/callback ← https not http
+
+CORRECT URL:
+  ✓ http://localhost:5000/api/auth/google/callback
+
+════════════════════════════════════════════════════════════
+  AFTER ADDING THE URI
+════════════════════════════════════════════════════════════
+
+1. Click SAVE in Google Cloud Console
+2. Wait 10-30 seconds for changes to propagate
+3. Go back to your browser and try again:
+   http://localhost:5000/api/auth/google
+
+4. You should now be redirected to Google login page
+5. After logging in, you'll be redirected back to your app
+
+════════════════════════════════════════════════════════════
+  TESTING AFTER FIX
+════════════════════════════════════════════════════════════
+
+Once you've added the URI, test it:
+
+1. Open browser: http://localhost:5000/api/auth/google
+2. You should see Google's login page
+3. Login with your Google account
+4. Google will redirect back to your app
+5. You should receive JWT tokens
+
+If it still doesn't work:
+  • Double-check the URL matches exactly
+  • Wait a bit longer (up to 1 minute)
+  • Try in an incognito/private window
+  • Clear browser cache
+
+════════════════════════════════════════════════════════════
+
+Quick Link to Google Console:
+https://console.cloud.google.com/apis/credentials
+
+Your Callback URL (copy this):
+http://localhost:5000/api/auth/google/callback
+
+════════════════════════════════════════════════════════════

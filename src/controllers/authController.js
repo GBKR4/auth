@@ -46,7 +46,15 @@ export const register = async (req, res) => {
     );
 
     // Send verification email
-    await emailService.sendVerificationEmail(user.email, verificationToken);
+    try {
+      await emailService.sendVerificationEmail(user.email, verificationToken);
+    } catch (emailError) {
+      logger.error('Email sending failed (but registration succeeded)', { 
+        error: emailError.message, 
+        email: user.email 
+      });
+      // Continue registration even if email fails
+    }
 
     logger.info('User registered', { email, username, userId: user.id });
 

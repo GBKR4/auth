@@ -1,7 +1,7 @@
 // Load environment variables first
 import { configDotenv } from 'dotenv';
 configDotenv();
-
+import passport from './config/passport.js';
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -15,7 +15,7 @@ app.use(helmet());
 app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
+app.use(passport.initialize());
 app.use('/api', routes);
 app.use(notFound);
 app.use(errorHandler);
