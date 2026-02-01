@@ -62,6 +62,7 @@ CREATE TABLE IF NOT EXISTS login_attempts (
 -- Create indexes for better performance
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
+CREATE INDEX IF NOT EXISTS idx_users_google_id ON users(google_id);
 CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user_id ON refresh_tokens(user_id);
 CREATE INDEX IF NOT EXISTS idx_refresh_tokens_token ON refresh_tokens(token);
 CREATE INDEX IF NOT EXISTS idx_verification_tokens_token ON verification_tokens(token);
@@ -88,15 +89,3 @@ CREATE TRIGGER update_users_updated_at
     BEFORE UPDATE ON users
     FOR EACH ROW 
     EXECUTE FUNCTION update_updated_at_column();
-
--- Add to your users table
-ALTER TABLE users 
-ADD COLUMN google_id VARCHAR(255) UNIQUE,
-ADD COLUMN auth_provider VARCHAR(50) DEFAULT 'local',
-ADD COLUMN profile_picture VARCHAR(500);
-
--- Make password_hash nullable for OAuth users
-ALTER TABLE users ALTER COLUMN password_hash DROP NOT NULL;
-
--- Create index
-CREATE INDEX IF NOT EXISTS idx_users_google_id ON users(google_id);
