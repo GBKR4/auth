@@ -22,21 +22,14 @@ export const googleAuthCallback = async (req, res) => {
     // Update last login
     await User.updateLastLogin(user.id);
 
-    // Set tokens in httpOnly cookies
-    res.cookie('accessToken', accessToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: 15 * 60 * 1000 // 15 minutes
-    });
+    // Set tokens as httpOnly cookies — not readable by JS, not exposed in URL/logs
+    const isProd = process.env.NODE_ENV === 'production';
+    const cookieOpts = { httpOnly: true, secure: isProd, sameSite: isProd ? 'strict' : 'lax', path: '/' };
 
-    res.cookie('refreshToken', refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
-    });
-
-    // Redirect to frontend with success
-    return res.redirect(`${process.env.FRONTEND_URL}/dashboard?auth=success`);
+    return res
+      .cookie('accessToken', accessToken, { ...cookieOpts, maxAge: 15 * 60 * 1000 })
+      .cookie('refreshToken', refreshToken, { ...cookieOpts, maxAge: 7 * 24 * 60 * 60 * 1000 })
+      .redirect(`${process.env.FRONTEND_URL}/auth/google/callback`);
 
   } catch (error) {
     console.error('Google auth callback error:', error);

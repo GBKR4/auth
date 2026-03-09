@@ -84,6 +84,11 @@ export const login = async (req, res) => {
       return res.status(401).json({ error: 'Invalid email or password' });
     }
 
+    // Check if account uses Google OAuth (no password set)
+    if (!user.password_hash) {
+      return res.status(400).json({ error: 'This account was created with Google. Please sign in with Google.' });
+    }
+
     // Verify password
     const isValidPassword = await hashService.comparePassword(password, user.password_hash);
     if (!isValidPassword) {
@@ -114,17 +119,21 @@ export const login = async (req, res) => {
 
     logger.info('User logged in', { userId: user.id, email: user.email, ip: req.ip });
 
-    res.json({
-      message: 'Login successful',
-      accessToken,
-      refreshToken,
-      user: {
-        id: user.id,
-        email: user.email,
-        username: user.username,
-        role: user.role,
-      },
-    });
+    const isProd = process.env.NODE_ENV === 'production';
+    const cookieOpts = { httpOnly: true, secure: isProd, sameSite: isProd ? 'strict' : 'lax', path: '/' };
+
+    res
+      .cookie('accessToken', accessToken, { ...cookieOpts, maxAge: 15 * 60 * 1000 })
+      .cookie('refreshToken', refreshToken, { ...cookieOpts, maxAge: 7 * 24 * 60 * 60 * 1000 })
+      .json({
+        message: 'Login successful',
+        user: {
+          id: user.id,
+          email: user.email,
+          username: user.username,
+          role: user.role,
+        },
+      });
   } catch (error) {
     logger.error('Login failed', { error: error.message, email: req.body.email });
     res.status(500).json({ error: 'Login failed' });
@@ -134,38 +143,37 @@ export const login = async (req, res) => {
 // Logout user
 export const logout = async (req, res) => {
   try {
-    const { refreshToken } = req.body;
-
-    if (!refreshToken) {
-      return res.status(400).json({ error: 'Refresh token required' });
+    const refreshToken = req.cookies.refreshToken;
+    if (refreshToken) {
+      await Token.revokeRefreshToken(refreshToken);
     }
 
-    // Revoke refresh token
-    await Token.revokeRefreshToken(refreshToken);
+    logger.info('User logged out');
 
-    logger.info('User logged out', { userId: req.user?.id });
-
-    res.json({ message: 'Logout successful' });
+    res
+      .clearCookie('accessToken', { path: '/' })
+      .clearCookie('refreshToken', { path: '/' })
+      .json({ message: 'Logout successful' });
   } catch (error) {
-    console.error('Logout error:', error);
+    logger.error('Logout error', { error: error.message });
     res.status(500).json({ error: 'Logout failed' });
   }
 };
 
-// Refresh access token
+// Refresh access token (rotates refresh token to prevent replay attacks)
 export const refreshToken = async (req, res) => {
   try {
-    const { refreshToken } = req.body;
+    const oldRefreshToken = req.cookies.refreshToken;
 
-    if (!refreshToken) {
-      return res.status(400).json({ error: 'Refresh token required' });
+    if (!oldRefreshToken) {
+      return res.status(401).json({ error: 'Refresh token required' });
     }
 
     // Verify refresh token
-    const decoded = tokenService.verifyRefreshToken(refreshToken);
+    const decoded = tokenService.verifyRefreshToken(oldRefreshToken);
 
     // Check if token exists in database and not revoked
-    const tokenRecord = await Token.findRefreshToken(refreshToken);
+    const tokenRecord = await Token.findRefreshToken(oldRefreshToken);
     if (!tokenRecord) {
       return res.status(401).json({ error: 'Invalid refresh token' });
     }
@@ -176,14 +184,22 @@ export const refreshToken = async (req, res) => {
       return res.status(401).json({ error: 'User not found' });
     }
 
-    // Generate new access token
-    const accessToken = tokenService.generateAccessToken(user);
+    // Rotate: revoke old token, issue new pair
+    await Token.revokeRefreshToken(oldRefreshToken);
+    const newAccessToken = tokenService.generateAccessToken(user);
+    const newRefreshToken = tokenService.generateRefreshToken(user);
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    await Token.createRefreshToken(user.id, newRefreshToken, expiresAt);
 
-    res.json({
-      accessToken,
-    });
+    const isProd = process.env.NODE_ENV === 'production';
+    const cookieOpts = { httpOnly: true, secure: isProd, sameSite: isProd ? 'strict' : 'lax', path: '/' };
+
+    res
+      .cookie('accessToken', newAccessToken, { ...cookieOpts, maxAge: 15 * 60 * 1000 })
+      .cookie('refreshToken', newRefreshToken, { ...cookieOpts, maxAge: 7 * 24 * 60 * 60 * 1000 })
+      .json({ message: 'Token refreshed' });
   } catch (error) {
-    console.error('Refresh token error:', error);
+    logger.error('Refresh token error', { error: error.message });
     res.status(401).json({ error: 'Invalid or expired refresh token' });
   }
 };

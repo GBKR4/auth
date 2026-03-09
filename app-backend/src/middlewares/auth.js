@@ -3,17 +3,21 @@ import jwt from 'jsonwebtoken';
 import logger from '../utils/logger.js';
 
 export const authenticateToken = (req, res, next) => {
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    logger.warn('Missing or invalid authorization header', {
-      path: req.path,
-      ip: req.ip
-    });
-    return res.status(401).json({ error: 'Unauthorized' });
-  };
+  // Prefer httpOnly cookie; fall back to Authorization header for non-browser clients
+  let token = req.cookies?.accessToken;
 
-  const token = authHeader.split(' ')[1];
-  
+  if (!token) {
+    const authHeader = req.headers.authorization;
+    if (authHeader?.startsWith('Bearer ')) {
+      token = authHeader.split(' ')[1];
+    }
+  }
+
+  if (!token) {
+    logger.warn('Missing token', { path: req.path, ip: req.ip });
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
   try {
     const decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET);
     req.user = decoded;
