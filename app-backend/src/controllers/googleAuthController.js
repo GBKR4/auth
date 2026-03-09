@@ -1,6 +1,7 @@
 import * as tokenService from '../services/tokenService.js';
 import User from '../models/User.js';
 import Token from '../models/Token.js';
+import logger from '../utils/logger.js';
 
 // Google OAuth callback handler
 export const googleAuthCallback = async (req, res) => {
@@ -32,7 +33,7 @@ export const googleAuthCallback = async (req, res) => {
       .redirect(`${process.env.FRONTEND_URL}/auth/google/callback`);
 
   } catch (error) {
-    console.error('Google auth callback error:', error);
+    logger.error('Google auth callback error', { error: error.message });
     return res.redirect(`${process.env.FRONTEND_URL}/login?error=server_error`);
   }
 };

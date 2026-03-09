@@ -4,6 +4,7 @@ configDotenv();
 import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import User from '../models/User.js';
+import logger from '../utils/logger.js';
 
 passport.use(new GoogleStrategy({
   clientID: process.env.GOOGLE_CLIENT_ID,
@@ -55,7 +56,7 @@ passport.use(new GoogleStrategy({
     
     return done(null, user);
   } catch (error) {
-    console.error('Google Strategy Error:', error);
+    logger.error('Google OAuth strategy error', { error: error.message });
     return done(error, null);
   }
 }));

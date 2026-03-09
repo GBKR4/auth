@@ -223,7 +223,7 @@ export const verifyEmail = async (req, res) => {
 
     res.json({ message: 'Email verified successfully. You can now login.' });
   } catch (error) {
-    console.error('Verify email error:', error);
+    logger.error('Verify email error', { error: error.message });
     res.status(500).json({ error: 'Email verification failed' });
   }
 };
@@ -260,7 +260,7 @@ export const resendVerification = async (req, res) => {
 
     res.json({ message: 'Verification email sent. Please check your inbox.' });
   } catch (error) {
-    console.error('Resend verification error:', error);
+    logger.error('Resend verification error', { error: error.message });
     res.status(500).json({ error: 'Failed to resend verification email' });
   }
 };
