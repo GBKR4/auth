@@ -135,24 +135,20 @@ export const deleteById = async (id) => {
 
 export const markAsVerified = async (id) => {
   const pool = getPool();
-  const result = await pool.query("SELECT * FROM users WHERE id = $1", [id]);
-
-  if(result.rowCount === 0) {
-    return null;
-  }
-
-  await pool.query("UPDATE users SET is_verified = true WHERE id = $1", [id]);
+  const result = await pool.query(
+    'UPDATE users SET is_verified = true WHERE id = $1 RETURNING *',
+    [id]
+  );
+  return result.rows[0] ?? null;
 };
 
-export const updateLastLogin  = async (id) => {
+export const updateLastLogin = async (id) => {
   const pool = getPool();
-  const result = await pool.query("SELECT * FROM users WHERE id = $1", [id]);
-
-  if(result.rowCount === 0) {
-    return null;
-  }
-
-  await pool.query("UPDATE users SET last_login = NOW() WHERE id = $1", [id]);
+  const result = await pool.query(
+    'UPDATE users SET last_login = NOW() WHERE id = $1 RETURNING *',
+    [id]
+  );
+  return result.rows[0] ?? null;
 };
 
 export const findByGoogleId = async (googleId) => {

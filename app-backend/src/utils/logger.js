@@ -1,66 +1,39 @@
-// Logging utility
+// Production-grade logger using pino
+import pino from 'pino';
 
-const logLevels = {
-  ERROR: 'ERROR',
-  WARN: 'WARN',
-  INFO: 'INFO',
-  DEBUG: 'DEBUG',
+const isDev = process.env.NODE_ENV !== 'production';
+
+const logger = pino({
+  level: process.env.LOG_LEVEL || (isDev ? 'debug' : 'info'),
+  ...(isDev && {
+    transport: {
+      target: 'pino-pretty',
+      options: {
+        colorize: true,
+        translateTime: 'SYS:standard',
+        ignore: 'pid,hostname',
+      },
+    },
+  }),
+});
+
+// Attach convenience .request() used elsewhere in the codebase
+logger.request = (req, meta = {}) => {
+  logger.info({
+    method: req.method,
+    path: req.path,
+    ip: req.ip,
+    userAgent: req.get?.('user-agent'),
+    ...meta,
+    msg: 'HTTP Request',
+  });
 };
 
-class Logger {
-  log(level, message, meta = {}) {
-    const timestamp = new Date().toISOString();
-    const logEntry = {
-      timestamp,
-      level,
-      message,
-      ...meta,
-    };
-
-    // In production, you might want to send this to a logging service
-    console.log(JSON.stringify(logEntry));
+// Attach convenience .query() used elsewhere in the codebase (dev-only)
+logger.query = (sql, params = [], meta = {}) => {
+  if (isDev) {
+    logger.debug({ sql, params, ...meta, msg: 'Database Query' });
   }
+};
 
-  error(message, meta = {}) {
-    this.log(logLevels.ERROR, message, meta);
-  }
-
-  warn(message, meta = {}) {
-    this.log(logLevels.WARN, message, meta);
-  }
-
-  info(message, meta = {}) {
-    this.log(logLevels.INFO, message, meta);
-  }
-
-  debug(message, meta = {}) {
-    // Only log debug messages in development
-    if (process.env.NODE_ENV === 'development') {
-      this.log(logLevels.DEBUG, message, meta);
-    }
-  }
-
-  // Convenience method for HTTP request logging
-  request(req, meta = {}) {
-    this.info('HTTP Request', {
-      method: req.method,
-      path: req.path,
-      ip: req.ip,
-      userAgent: req.get('user-agent'),
-      ...meta,
-    });
-  }
-
-  // Convenience method for database query logging
-  query(sql, params = [], meta = {}) {
-    if (process.env.NODE_ENV === 'development') {
-      this.debug('Database Query', {
-        sql,
-        params,
-        ...meta,
-      });
-    }
-  }
-}
-
-export default new Logger();
+export default logger;

@@ -8,22 +8,27 @@ import emailService from '../services/emailService.js';
 import logger from '../utils/logger.js';
 
 // Request forgot password
+const FORGOT_PASSWORD_MSG = 'If that email is registered, a password reset link has been sent.';
+
 export const forgotPassword = async (req, res) => {
   try {
     const email = req.body.email;
 
     const user = await User.findByEmail(email);
     if (!user) {
-      // Don't reveal if user exists or not for security
-      return res.status(200).json({ message: 'Password reset email sent if the email exists' });
+      // Always return same response to prevent email enumeration
+      return res.status(200).json({ message: FORGOT_PASSWORD_MSG });
     }
+
+    // Invalidate any existing reset tokens before creating a new one
+    await Token.invalidateUserVerificationTokens(user.id, 'password_reset');
 
     const resetToken = tokenService.generatePasswordResetToken();
     const expiresAt = new Date(Date.now() + 1 * 60 * 60 * 1000); // 1 hour
     await Token.createVerificationToken(user.id, resetToken, 'password_reset', expiresAt);
     await emailService.sendPasswordResetEmail(user.email, resetToken);
     logger.info('Password reset email sent', { userId: user.id });
-    return res.status(200).json({ message: 'Password reset email sent' });
+    return res.status(200).json({ message: FORGOT_PASSWORD_MSG });
   } catch (error) {
     logger.error('Forgot password error', { error: error.message });
     return res.status(500).json({ error: 'Failed to process password reset request' });

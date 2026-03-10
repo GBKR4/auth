@@ -74,6 +74,10 @@ export const register = async (req, res) => {
 };
 
 // Login user
+const MAX_FAILED_ATTEMPTS = 5;
+const LOCKOUT_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
+const LOCKOUT_DURATION_MS = 15 * 60 * 1000; // 15 minutes
+
 export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -87,6 +91,28 @@ export const login = async (req, res) => {
       await pool.query('INSERT INTO login_attempts (email, ip_address, success) VALUES ($1, $2, false)', [email, req.ip]);
       return res.status(401).json({ error: 'Invalid email or password' });
     }
+
+    // ── Account lockout check ────────────────────────────────────────────────
+    const windowStart = new Date(Date.now() - LOCKOUT_WINDOW_MS);
+    const attemptsResult = await pool.query(
+      `SELECT COUNT(*) AS count, MAX(attempted_at) AS last_attempt
+       FROM login_attempts
+       WHERE email = $1 AND success = false AND attempted_at > $2`,
+      [email, windowStart]
+    );
+    const failedCount = parseInt(attemptsResult.rows[0].count, 10);
+    const lastAttempt = attemptsResult.rows[0].last_attempt;
+    if (failedCount >= MAX_FAILED_ATTEMPTS && lastAttempt) {
+      const msSinceLast = Date.now() - new Date(lastAttempt).getTime();
+      if (msSinceLast < LOCKOUT_DURATION_MS) {
+        const waitSec = Math.ceil((LOCKOUT_DURATION_MS - msSinceLast) / 1000);
+        logger.warn('Account temporarily locked', { email, ip: req.ip, waitSec });
+        return res.status(429).json({
+          error: `Too many failed login attempts. Try again in ${waitSec} seconds.`,
+        });
+      }
+    }
+    // ─────────────────────────────────────────────────────────────────────────
 
     // Check if account uses Google OAuth (no password set)
     if (!user.password_hash) {
@@ -260,8 +286,15 @@ export const resendVerification = async (req, res) => {
       expiresAt
     );
 
-    // Send verification email
-    await emailService.sendVerificationEmail(user.email, verificationToken);
+    // Send verification email — non-fatal if it fails
+    try {
+      await emailService.sendVerificationEmail(user.email, verificationToken);
+    } catch (emailError) {
+      logger.error('Failed to send verification email (resend)', {
+        error: emailError.message,
+        email: user.email,
+      });
+    }
 
     res.json({ message: 'Verification email sent. Please check your inbox.' });
   } catch (error) {

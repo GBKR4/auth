@@ -1,6 +1,11 @@
-// Email service
+// Email service — uses styled HTML templates
 import nodemailer from 'nodemailer';
 import { getEmailConfig } from '../config/email.js';
+import {
+  verificationEmailTemplate,
+  passwordResetEmailTemplate,
+  welcomeEmailTemplate,
+} from '../templates/emailTemplates.js';
 
 let transporter = null;
 
@@ -33,30 +38,33 @@ export const sendEmail = async (to, subject, html) => {
 
 export const sendVerificationEmail = async (email, token) => {
   const verificationLink = `${process.env.CLIENT_URL}/verify-email/${token}`;
-  const subject = 'Verify Your Email Address';
-  const html = `<p>Please verify your email by clicking the link below:</p>
-                <a href="${verificationLink}">Verify Email</a>`;
-  await sendEmail(email, subject, html);
+  await sendEmail(
+    email,
+    'Verify Your Email Address',
+    verificationEmailTemplate(verificationLink),
+  );
 };
 
 export const sendPasswordResetEmail = async (email, token) => {
   const resetLink = `${process.env.CLIENT_URL}/reset-password/${token}`;
-  const subject = 'Reset Your Password';
-  const html = `<p>You can reset your password by clicking the link below:</p>
-                <a href="${resetLink}">Reset Password</a>`;
-  await sendEmail(email, subject, html);
+  await sendEmail(
+    email,
+    'Reset Your Password',
+    passwordResetEmailTemplate(resetLink),
+  );
 };
 
 export const sendWelcomeEmail = async (email, firstName) => {
-  const subject = 'Welcome to Our Service!';
-  const html = `<p>Hi ${firstName},</p>
-                <p>Welcome to our service! We're glad to have you on board.</p>`;
-  await sendEmail(email, subject, html);
+  await sendEmail(
+    email,
+    'Welcome to Auth App!',
+    welcomeEmailTemplate(firstName),
+  );
 };
 
 export default {
   sendEmail,
   sendVerificationEmail,
   sendPasswordResetEmail,
-  sendWelcomeEmail
+  sendWelcomeEmail,
 };
