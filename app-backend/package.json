@@ -6,7 +6,10 @@
   "scripts": {
     "dev": "nodemon server.js",
     "start": "node server.js",
-    "test": "jest"
+    "test": "jest",
+    "k6:smoke": "k6 run ../k6/smoke.test.js",
+    "k6:load": "k6 run ../k6/load.test.js",
+    "k6:stress": "k6 run ../k6/stress.test.js"
   },
   "dependencies": {
     "axios": "^1.13.5",
