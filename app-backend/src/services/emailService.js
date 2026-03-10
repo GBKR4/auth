@@ -37,7 +37,7 @@ export const sendEmail = async (to, subject, html) => {
 };
 
 export const sendVerificationEmail = async (email, token) => {
-  const verificationLink = `${process.env.CLIENT_URL}/verify-email/${token}`;
+  const verificationLink = `${process.env.FRONTEND_URL}/verify-email/${token}`;
   await sendEmail(
     email,
     'Verify Your Email Address',
@@ -46,7 +46,7 @@ export const sendVerificationEmail = async (email, token) => {
 };
 
 export const sendPasswordResetEmail = async (email, token) => {
-  const resetLink = `${process.env.CLIENT_URL}/reset-password/${token}`;
+  const resetLink = `${process.env.FRONTEND_URL}/reset-password/${token}`;
   await sendEmail(
     email,
     'Reset Your Password',

@@ -57,6 +57,7 @@ process.stdin.resume();
 
 // Handle server errors
 server.on('error', (error) => {
+  console.error("EXPLICIT SERVER ERROR CAUGHT: ", error);
   logger.error('Server error:', error);
   process.exit(1);
 });

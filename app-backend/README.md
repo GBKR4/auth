@@ -120,9 +120,9 @@ EMAIL_USER=your-email@gmail.com
 EMAIL_PASSWORD=your-16-char-app-password
 EMAIL_FROM=noreply@yourapp.com
 
-# Frontend URLs — must match Vite dev server port
+# Frontend URL — must match Vite dev server port
+# Used for email verification and password reset links
 FRONTEND_URL=http://localhost:5173
-CLIENT_URL=http://localhost:5173
 
 # Google OAuth 2.0
 # Authorized redirect URI in Google Console: http://localhost:3000/api/auth/google/callback
@@ -276,12 +276,10 @@ Content-Type: application/json
 }
 ```
 
-**Response `200`:**
+**Response `200` — tokens are set as `httpOnly` cookies, not returned in the body:**
 ```json
 {
   "message": "Login successful",
-  "accessToken": "eyJ...",
-  "refreshToken": "eyJ...",
   "user": { "id": 1, "email": "user@example.com", "username": "johndoe", "role": "user" }
 }
 ```
@@ -290,16 +288,14 @@ Content-Type: application/json
 
 ### Refresh Access Token
 ```bash
+# No body needed — the refreshToken httpOnly cookie is sent automatically
 POST http://localhost:3000/api/auth/refresh
-Content-Type: application/json
-
-{ "refreshToken": "eyJ..." }
 ```
 
 ### Get Profile (Protected)
 ```bash
+# accessToken httpOnly cookie is sent automatically by the browser
 GET http://localhost:3000/api/user/profile
-Authorization: Bearer eyJ...
 ```
 
 **Response `200`:**
@@ -372,9 +368,10 @@ last_login      TIMESTAMP
 ### Rate Limiting
 | Endpoint | Limit | Window |
 |----------|-------|--------|
-| Login | 5 requests | 15 min |
-| Register | 5 requests | 15 min |
-| Password Reset | 3 requests | 1 hour |
+| Login | 20 requests | 15 min |
+| Register | 10 requests | 15 min |
+| Password Reset | 5 requests | 15 min |
+| Resend Verification | 5 requests | 15 min |
 | General API | 100 requests | 15 min |
 
 ### Password Requirements
@@ -382,9 +379,9 @@ last_login      TIMESTAMP
 - At least 1 uppercase, 1 lowercase, 1 number, 1 special character
 
 ### JWT Tokens
-- **Access Token:** 15-minute expiry — stored in `localStorage`
-- **Refresh Token:** 7-day expiry — stored in `localStorage`, rotated on use
-- Silent refresh via Axios interceptor (frontend queues parallel requests)
+- **Access Token:** 15-minute expiry — stored in `httpOnly` cookie (not accessible by JS)
+- **Refresh Token:** 7-day expiry — stored in `httpOnly` cookie, rotated on every use
+- Silent refresh via Axios response interceptor (parallel requests are queued and retried)
 
 ### Other Measures
 - Helmet.js security headers
@@ -399,6 +396,12 @@ last_login      TIMESTAMP
 
 ```
 auth/
+├── k6/                              # k6 performance & load test scripts
+│   ├── config.js                    # Shared BASE_URL, credentials, cookie helpers
+│   ├── smoke.test.js                # Smoke test — 1 VU, full endpoint coverage
+│   ├── load.test.js                 # Load test — ramping VUs, 3 scenarios
+│   └── stress.test.js               # Stress test — spike to 100 VUs + recovery
+│
 ├── app-backend/                     # Node.js + Express API
 │   ├── server.js                    # Entry point
 │   ├── package.json
@@ -416,7 +419,7 @@ auth/
 │   │   │   └── passport.js          # Google OAuth strategy
 │   │   ├── controllers/
 │   │   │   ├── authController.js    # Register, login, logout, refresh, verify
-│   │   │   ├── googleAuthController.js  # Google OAuth callback → URL-param redirect
+│   │   │   ├── googleAuthController.js  # Google OAuth callback → sets httpOnly cookies
 │   │   │   ├── passwordController.js    # Forgot/reset password
 │   │   │   └── userController.js    # Profile, change-password, admin
 │   │   ├── models/
@@ -491,13 +494,56 @@ auth/
 
 ## 🧪 Testing
 
+### Integration / Functional Tests
 ```bash
 cd app-backend
 node tests/test-complete.js
 node tests/test-email.js
 ```
 
-**Tests cover:** registration, email verification, login/logout, token refresh, password reset, Google OAuth initiation, protected routes, admin access, rate limiting, input validation.
+### k6 Load & Performance Tests
+
+Requires [k6](https://k6.io/docs/get-started/installation/) to be installed.
+
+```bash
+# Install k6 (Windows)
+winget install GrafanaLabs.k6
+
+# Or macOS
+brew install k6
+```
+
+#### Smoke Test — verify all endpoints work (1 VU, 1 iteration)
+```bash
+k6 run k6/smoke.test.js
+```
+
+#### Load Test — realistic multi-scenario traffic (0–20 VUs over ~3 min)
+> Pre-requisite: `TEST_USER` and `ADMIN_USER` must exist in the DB and be email-verified.
+```bash
+k6 run k6/load.test.js
+
+# Override credentials and target URL
+k6 run --env BASE_URL=http://localhost:3000 \
+        --env TEST_EMAIL=loadtest@example.com \
+        --env TEST_PASSWORD=LoadTest@1234 \
+        --env ADMIN_EMAIL=admin@example.com \
+        --env ADMIN_PASSWORD=Admin@1234 \
+        k6/load.test.js
+```
+
+#### Stress Test — find the breaking point (ramps to 100 VUs, includes spike)
+```bash
+k6 run k6/stress.test.js
+```
+
+| Script | VUs | Duration | Purpose |
+|--------|-----|----------|---------|
+| `smoke.test.js` | 1 | ~3 s | Functional correctness |
+| `load.test.js` | 0–20 | ~3 min | Normal traffic simulation |
+| `stress.test.js` | 0–100 | ~5.5 min | Breaking point + recovery |
+
+**k6 test coverage:** health check, register, login (verified/unverified), logout, token refresh, profile read/update, password change, admin user list, forgot/reset password, input validation, rate-limit handling.
 
 ---
 
@@ -548,7 +594,7 @@ Vite dev server handles SPA routing automatically. If deploying, configure your 
 - [ ] Strong random `JWT_ACCESS_SECRET` and `JWT_REFRESH_SECRET` (64+ chars)
 - [ ] PostgreSQL with SSL and a dedicated user
 - [ ] Production email service (SendGrid, AWS SES, etc.)
-- [ ] Update `FRONTEND_URL`, `CLIENT_URL`, `GOOGLE_CALLBACK_URL` to production domains
+- [ ] Update `FRONTEND_URL`, `GOOGLE_CALLBACK_URL` to production domains
 - [ ] Add production domain to Google Console authorized origins + redirect URIs
 - [ ] HTTPS on both frontend and backend
 - [ ] Run frontend build: `cd app-frontend && npm run build` — deploy `dist/` to CDN or static host
@@ -571,7 +617,7 @@ Vite dev server handles SPA routing automatically. If deploying, configure your 
 | helmet | 8.1.0 | Security headers |
 | express-rate-limit | 8.2.1 | Rate limiting |
 | express-validator | 7.3.1 | Input validation |
-| winston | — | Structured logging |
+| pino | 10.3.1 | Structured JSON logging (pino-pretty in dev) |
 
 ### Frontend (`app-frontend`)
 | Package | Version | Purpose |

@@ -38,7 +38,13 @@ export const updateUserProfile = async (req, res) => {
   try {
     const userId = req.user.id;
     const { first_name, last_name } = req.body;
-    const updatedUser = await User.updateById(userId, { first_name, last_name });
+    const updates = {};
+    if (first_name !== undefined) updates.first_name = first_name;
+    if (last_name !== undefined) updates.last_name = last_name;
+    if (Object.keys(updates).length === 0) {
+      return res.status(400).json({ error: 'No fields to update' });
+    }
+    const updatedUser = await User.updateById(userId, updates);
     if (!updatedUser) {
       return res.status(404).json({ error: 'User not found' });
     }

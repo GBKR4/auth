@@ -1,4 +1,3 @@
-import bcrypt from 'bcrypt';
 import { getPool } from '../config/database.js';
 import User from '../models/User.js';
 import Token from '../models/Token.js';
