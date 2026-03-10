@@ -11,7 +11,8 @@ import {
 import { 
   loginLimiter, 
   registerLimiter,
-  passwordResetLimiter
+  passwordResetLimiter,
+  resendVerificationLimiter
 } from '../middlewares/rateLimiter.js';
 
 const router = Router();
@@ -21,7 +22,7 @@ router.post('/login', loginLimiter, loginValidation, authController.login);
 router.post('/logout', authController.logout);
 router.post('/refresh', authController.refreshToken);
 router.get('/verify/:token', authController.verifyEmail);
-router.post('/resend-verification', emailValidation, authController.resendVerification);
+router.post('/resend-verification', resendVerificationLimiter, emailValidation, authController.resendVerification);
 router.post('/forgot-password', passwordResetLimiter, passwordResetRequestValidation, passwordController.forgotPassword);
 router.post('/reset-password', passwordResetValidation, passwordController.resetPassword);
 router.post('/validate-reset-token', passwordController.validatePasswordResetToken);

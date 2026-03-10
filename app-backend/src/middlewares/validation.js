@@ -104,7 +104,7 @@ export const profileUpdateValidation = [
 
 // Change password validation
 export const changePasswordValidation = [
-  body('oldPassword')
+  body('currentPassword')
     .notEmpty()
     .withMessage('Current password is required'),
   body('newPassword')

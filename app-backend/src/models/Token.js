@@ -81,6 +81,16 @@ export const deleteExpiredTokens = async () => {
   return true;
 };
 
+// Invalidate all pending verification tokens for a user (used before issuing a new one)
+export const invalidateUserVerificationTokens = async (userId, tokenType) => {
+  const pool = getPool();
+  await pool.query(
+    `UPDATE verification_tokens SET used_at = NOW() WHERE user_id = $1 AND token_type = $2 AND used_at IS NULL`,
+    [userId, tokenType]
+  );
+  return true;
+};
+
 export default {
   createRefreshToken,
   findRefreshToken,
@@ -90,4 +100,5 @@ export default {
   findVerificationToken,
   markTokenAsUsed,
   deleteExpiredTokens,
+  invalidateUserVerificationTokens,
 };

@@ -93,16 +93,26 @@ export const create = async (user) => {
   return result.rows[0];
 };
 
+// Whitelist of columns that are safe to update via this function
+const UPDATABLE_COLUMNS = new Set([
+  'first_name', 'last_name', 'password_hash', 'is_verified',
+  'is_active', 'role', 'google_id', 'auth_provider', 'profile_picture', 'last_login',
+]);
+
 export const updateById = async (id, updates) => {
   const pool = getPool();
   const fields = [];
   const values = [];
   let index = 1;
   for (const key in updates) {
+    if (!UPDATABLE_COLUMNS.has(key)) {
+      throw new Error(`Column '${key}' is not allowed in updateById`);
+    }
     fields.push(`${key} = $${index}`);
     values.push(updates[key]);
     index++;
   }
+  if (fields.length === 0) return null;
   values.push(id);
   const result = await pool.query(
     `UPDATE users SET ${fields.join(', ')} WHERE id = $${index} RETURNING *`,

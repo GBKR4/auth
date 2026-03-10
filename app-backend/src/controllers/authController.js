@@ -1,4 +1,5 @@
 import bcrypt from 'bcrypt';
+import { getPool } from '../config/database.js';
 import User from '../models/User.js';
 import Token from '../models/Token.js';
 import tokenService from '../services/tokenService.js';
@@ -77,10 +78,13 @@ export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
+    const pool = getPool();
+
     // Find user by email
     const user = await User.findByEmail(email);
     if (!user) {
       logger.warn('Failed login attempt - user not found', { email, ip: req.ip });
+      await pool.query('INSERT INTO login_attempts (email, ip_address, success) VALUES ($1, $2, false)', [email, req.ip]);
       return res.status(401).json({ error: 'Invalid email or password' });
     }
 
@@ -93,6 +97,7 @@ export const login = async (req, res) => {
     const isValidPassword = await hashService.comparePassword(password, user.password_hash);
     if (!isValidPassword) {
       logger.warn('Failed login attempt - invalid password', { email, ip: req.ip });
+      await pool.query('INSERT INTO login_attempts (email, ip_address, success) VALUES ($1, $2, false)', [email, req.ip]);
       return res.status(401).json({ error: 'Invalid email or password' });
     }
 
@@ -116,6 +121,7 @@ export const login = async (req, res) => {
 
     // Update last login
     await User.updateLastLogin(user.id);
+    await pool.query('INSERT INTO login_attempts (email, ip_address, success) VALUES ($1, $2, true)', [email, req.ip]);
 
     logger.info('User logged in', { userId: user.id, email: user.email, ip: req.ip });
 
@@ -178,10 +184,11 @@ export const refreshToken = async (req, res) => {
       return res.status(401).json({ error: 'Invalid refresh token' });
     }
 
-    // Get user
+    // Get user and verify account is still active
     const user = await User.findById(decoded.id);
-    if (!user) {
-      return res.status(401).json({ error: 'User not found' });
+    if (!user || !user.is_active) {
+      await Token.revokeRefreshToken(oldRefreshToken);
+      return res.status(401).json({ error: 'Account no longer active' });
     }
 
     // Rotate: revoke old token, issue new pair
@@ -233,16 +240,14 @@ export const resendVerification = async (req, res) => {
   try {
     const { email } = req.body;
 
-    // Find user
+    // Find user — return generic message to prevent email enumeration
     const user = await User.findByEmail(email);
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
+    if (!user || user.is_verified) {
+      return res.status(200).json({ message: 'If that email is registered and unverified, a new verification email has been sent.' });
     }
 
-    // Check if already verified
-    if (user.is_verified) {
-      return res.status(400).json({ error: 'Email already verified' });
-    }
+    // Invalidate all pending tokens before issuing a new one
+    await Token.invalidateUserVerificationTokens(user.id, 'email_verification');
 
     // Generate new verification token
     const verificationToken = tokenService.generateVerificationToken();
