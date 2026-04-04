@@ -12,7 +12,7 @@ const FORGOT_PASSWORD_MSG = 'If that email is registered, a password reset link 
 
 export const forgotPassword = async (req, res) => {
   try {
-    const email = req.body.email;
+    const { email, clientUrl } = req.body;
 
     const user = await User.findByEmail(email);
     if (!user) {
@@ -26,7 +26,7 @@ export const forgotPassword = async (req, res) => {
     const resetToken = tokenService.generatePasswordResetToken();
     const expiresAt = new Date(Date.now() + 1 * 60 * 60 * 1000); // 1 hour
     await Token.createVerificationToken(user.id, resetToken, 'password_reset', expiresAt);
-    await emailService.sendPasswordResetEmail(user.email, resetToken);
+    await emailService.sendPasswordResetEmail(user.email, resetToken, clientUrl);
     logger.info('Password reset email sent', { userId: user.id });
     return res.status(200).json({ message: FORGOT_PASSWORD_MSG });
   } catch (error) {

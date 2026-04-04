@@ -12,7 +12,11 @@ import routes from './routes/index.js';
 const app = express();
 app.set('trust proxy', 1);
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  origin: function (origin, callback) {
+    // Allows ANY domain to communicate with this auth backend (for multi-project support)
+    // For extreme security, replace this with an array `[ 'http://app1.com', 'http://app2.com' ]`
+    callback(null, true);
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],

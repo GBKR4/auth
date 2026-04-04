@@ -9,7 +9,7 @@ import logger from '../utils/logger.js';
 // Register new user
 export const register = async (req, res) => {
   try {
-    const { email, username, password, first_name, last_name } = req.body;
+    const { email, username, password, first_name, last_name, clientUrl } = req.body;
 
     // Check if user already exists
     const existingUser = await User.findByEmail(email);
@@ -47,7 +47,7 @@ export const register = async (req, res) => {
 
     // Send verification email
     try {
-      await emailService.sendVerificationEmail(user.email, verificationToken);
+      await emailService.sendVerificationEmail(user.email, verificationToken, clientUrl);
     } catch (emailError) {
       logger.error('Email sending failed (but registration succeeded)', { 
         error: emailError.message, 
@@ -150,14 +150,17 @@ export const login = async (req, res) => {
 
     logger.info('User logged in', { userId: user.id, email: user.email, ip: req.ip });
 
+    // Allow cross-domain cookies so multiple apps can share this auth
     const isProd = process.env.NODE_ENV === 'production';
-    const cookieOpts = { httpOnly: true, secure: isProd, sameSite: isProd ? 'strict' : 'lax', path: '/' };
+    const cookieOpts = { httpOnly: true, secure: true, sameSite: 'none', path: '/' };
 
     res
       .cookie('accessToken', accessToken, { ...cookieOpts, maxAge: 15 * 60 * 1000 })
       .cookie('refreshToken', refreshToken, { ...cookieOpts, maxAge: 7 * 24 * 60 * 60 * 1000 })
       .json({
         message: 'Login successful',
+        accessToken,  // Sent in payload for cross-domain projects where cookies are completely blocked
+        refreshToken, // Sent in payload for cross-domain projects where cookies are completely blocked
         user: {
           id: user.id,
           email: user.email,
@@ -194,7 +197,7 @@ export const logout = async (req, res) => {
 // Refresh access token (rotates refresh token to prevent replay attacks)
 export const refreshToken = async (req, res) => {
   try {
-    const oldRefreshToken = req.cookies.refreshToken;
+    const oldRefreshToken = req.cookies.refreshToken || req.body.refreshToken; // Allow body backup
 
     if (!oldRefreshToken) {
       return res.status(401).json({ error: 'Refresh token required' });
@@ -224,12 +227,16 @@ export const refreshToken = async (req, res) => {
     await Token.createRefreshToken(user.id, newRefreshToken, expiresAt);
 
     const isProd = process.env.NODE_ENV === 'production';
-    const cookieOpts = { httpOnly: true, secure: isProd, sameSite: isProd ? 'strict' : 'lax', path: '/' };
+    const cookieOpts = { httpOnly: true, secure: true, sameSite: 'none', path: '/' };
 
     res
       .cookie('accessToken', newAccessToken, { ...cookieOpts, maxAge: 15 * 60 * 1000 })
       .cookie('refreshToken', newRefreshToken, { ...cookieOpts, maxAge: 7 * 24 * 60 * 60 * 1000 })
-      .json({ message: 'Token refreshed' });
+      .json({ 
+        message: 'Token refreshed',
+        accessToken: newAccessToken,
+        refreshToken: newRefreshToken 
+      });
   } catch (error) {
     logger.error('Refresh token error', { error: error.message });
     res.status(401).json({ error: 'Invalid or expired refresh token' });
@@ -263,7 +270,7 @@ export const verifyEmail = async (req, res) => {
 // Resend verification email
 export const resendVerification = async (req, res) => {
   try {
-    const { email } = req.body;
+    const { email, clientUrl } = req.body;
 
     // Find user — return generic message to prevent email enumeration
     const user = await User.findByEmail(email);
@@ -287,7 +294,7 @@ export const resendVerification = async (req, res) => {
 
     // Send verification email — non-fatal if it fails
     try {
-      await emailService.sendVerificationEmail(user.email, verificationToken);
+      await emailService.sendVerificationEmail(user.email, verificationToken, clientUrl);
     } catch (emailError) {
       logger.error('Failed to send verification email (resend)', {
         error: emailError.message,

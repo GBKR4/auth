@@ -36,8 +36,9 @@ export const sendEmail = async (to, subject, html) => {
   await getTransporter().sendMail(mailOptions);
 };
 
-export const sendVerificationEmail = async (email, token) => {
-  const verificationLink = `${process.env.FRONTEND_URL}/verify-email/${token}`;
+export const sendVerificationEmail = async (email, token, clientUrl) => {
+  const baseUrl = clientUrl || process.env.FRONTEND_URL || 'http://localhost:5173';
+  const verificationLink = `${baseUrl}/verify-email/${token}`;
   await sendEmail(
     email,
     'Verify Your Email Address',
@@ -45,8 +46,9 @@ export const sendVerificationEmail = async (email, token) => {
   );
 };
 
-export const sendPasswordResetEmail = async (email, token) => {
-  const resetLink = `${process.env.FRONTEND_URL}/reset-password/${token}`;
+export const sendPasswordResetEmail = async (email, token, clientUrl) => {
+  const baseUrl = clientUrl || process.env.FRONTEND_URL || 'http://localhost:5173';
+  const resetLink = `${baseUrl}/reset-password/${token}`;
   await sendEmail(
     email,
     'Reset Your Password',

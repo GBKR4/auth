@@ -8,8 +8,14 @@ export const googleAuthCallback = async (req, res) => {
   try {
     const user = req.user;
     
+    // Decode state parameter to figure out the originating project's callback URL
+    let redirectUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    if (req.query.state) {
+      redirectUrl = decodeURIComponent(req.query.state);
+    }
+    
     if (!user) {
-      return res.redirect(`${process.env.FRONTEND_URL}/login?error=auth_failed`);
+      return res.redirect(`${redirectUrl}/login?error=auth_failed`);
     }
 
     // Generate JWT tokens
@@ -23,24 +29,30 @@ export const googleAuthCallback = async (req, res) => {
     // Update last login
     await User.updateLastLogin(user.id);
 
-    // Set tokens as httpOnly cookies — not readable by JS, not exposed in URL/logs
+    // Set tokens as cross-domain cookies
     const isProd = process.env.NODE_ENV === 'production';
-    const cookieOpts = { httpOnly: true, secure: isProd, sameSite: isProd ? 'strict' : 'lax', path: '/' };
+    const cookieOpts = { httpOnly: true, secure: true, sameSite: 'none', path: '/' };
 
+    // Redirect to the requesting app with tokens in URL
     return res
       .cookie('accessToken', accessToken, { ...cookieOpts, maxAge: 15 * 60 * 1000 })
       .cookie('refreshToken', refreshToken, { ...cookieOpts, maxAge: 7 * 24 * 60 * 60 * 1000 })
-      .redirect(`${process.env.FRONTEND_URL}/auth/google/callback`);
+      .redirect(`${redirectUrl}/auth/google/callback?accessToken=${accessToken}&refreshToken=${refreshToken}`);
 
   } catch (error) {
+    let redirectUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    if (req.query.state) redirectUrl = decodeURIComponent(req.query.state);
+    
     logger.error('Google auth callback error', { error: error.message });
-    return res.redirect(`${process.env.FRONTEND_URL}/login?error=server_error`);
+    return res.redirect(`${redirectUrl}/login?error=server_error`);
   }
 };
 
 // Google authentication failure handler
 export const googleAuthFailure = (req, res) => {
-  return res.redirect(`${process.env.FRONTEND_URL}/login?error=google_auth_failed`);
+  let redirectUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+  if (req.query.state) redirectUrl = decodeURIComponent(req.query.state);
+  return res.redirect(`${redirectUrl}/login?error=google_auth_failed`);
 };
 
 export default {
