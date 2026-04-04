@@ -5,6 +5,7 @@ import tokenService from '../services/tokenService.js';
 import hashService from '../services/hashService.js';
 import emailService from '../services/emailService.js';
 import logger from '../utils/logger.js';
+import { sanitizeClientUrl } from '../utils/validators.js';
 
 // ── Shared cookie helpers ─────────────────────────────────────────────────────
 // In development (HTTP) we use lax/non-secure cookies to avoid the browser
@@ -24,7 +25,8 @@ const authCookieOpts = () => ({
 // Register new user
 export const register = async (req, res) => {
   try {
-    const { email, username, password, first_name, last_name, clientUrl } = req.body;
+    const { email, username, password, first_name, last_name } = req.body;
+    const clientUrl = sanitizeClientUrl(req.body.clientUrl);
 
     // Check if user already exists
     const existingUser = await User.findByEmail(email);
@@ -284,7 +286,8 @@ export const verifyEmail = async (req, res) => {
 // Resend verification email
 export const resendVerification = async (req, res) => {
   try {
-    const { email, clientUrl } = req.body;
+    const { email } = req.body;
+    const clientUrl = sanitizeClientUrl(req.body.clientUrl);
 
     // Generic message prevents email enumeration
     const GENERIC_MSG = 'If that email is registered and unverified, a new verification email has been sent.';

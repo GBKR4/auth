@@ -5,13 +5,15 @@ import tokenService from '../services/tokenService.js';
 import Token from '../models/Token.js';
 import emailService from '../services/emailService.js';
 import logger from '../utils/logger.js';
+import { sanitizeClientUrl } from '../utils/validators.js';
 
 const FORGOT_PASSWORD_MSG = 'If that email is registered, a password reset link has been sent.';
 
 // Request forgot password
 export const forgotPassword = async (req, res) => {
   try {
-    const { email, clientUrl } = req.body;
+    const { email } = req.body;
+    const clientUrl = sanitizeClientUrl(req.body.clientUrl);
 
     const user = await User.findByEmail(email);
     if (!user) {

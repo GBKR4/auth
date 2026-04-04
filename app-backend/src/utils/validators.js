@@ -40,3 +40,25 @@ export const sanitizeObject = (obj) => {
   }
   return sanitized;
 };
+
+/**
+ * Validates a client-supplied redirect/base URL against the server's
+ * ALLOWED_ORIGINS + FRONTEND_URL allowlist to prevent open-redirect attacks.
+ *
+ * Returns the original url if its origin is on the allowlist, or undefined
+ * so callers fall back to process.env.FRONTEND_URL.
+ */
+export const sanitizeClientUrl = (url) => {
+  if (!url || typeof url !== 'string') return undefined;
+  try {
+    const { origin } = new URL(url);
+    const allowed = (process.env.ALLOWED_ORIGINS || '')
+      .split(',')
+      .map((o) => o.trim())
+      .filter(Boolean);
+    if (process.env.FRONTEND_URL) allowed.push(process.env.FRONTEND_URL);
+    return [...new Set(allowed)].includes(origin) ? url : undefined;
+  } catch {
+    return undefined;
+  }
+};
