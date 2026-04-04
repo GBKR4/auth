@@ -5,30 +5,35 @@ import Token from '../models/Token.js';
 import hashService from '../services/hashService.js';
 import logger from '../utils/logger.js';
 
+// ── Shared cookie helpers (mirrors authController) ────────────────────────────
+const isProd = () => process.env.NODE_ENV === 'production';
+const authCookieOpts = () => ({
+  httpOnly: true,
+  secure:   isProd(),
+  sameSite: isProd() ? 'none' : 'lax',
+  path:     '/',
+});
+// ─────────────────────────────────────────────────────────────────────────────
+
 // Get user profile
 export const getUserProfile = async (req, res) => {
   try {
-    const pool = getPool();
+    const pool   = getPool();
     const userId = req.user.id;
 
-    const user = await pool.query('SELECT id, email, username, first_name, last_name, role, is_verified, created_at, updated_at FROM users WHERE id = $1', [userId]);
-    if (user.rows.length === 0) {
+    const result = await pool.query(
+      `SELECT id, email, username, first_name, last_name, role, is_verified,
+              profile_picture, auth_provider, created_at, updated_at
+       FROM users WHERE id = $1`,
+      [userId]
+    );
+    if (result.rows.length === 0) {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    return res.status(200).json({
-      id: user.rows[0].id,
-      email: user.rows[0].email,
-      username: user.rows[0].username,
-      first_name: user.rows[0].first_name,
-      last_name: user.rows[0].last_name,
-      role: user.rows[0].role,
-      is_verified: user.rows[0].is_verified,
-      created_at: user.rows[0].created_at,
-      updated_at: user.rows[0].updated_at
-    });
+    return res.status(200).json(result.rows[0]);
   } catch (error) {
-    logger.error('Get profile error', { error: error.message, userId: req.user?.id });
+    logger.error({ error: error.message, userId: req.user?.id, reqId: req.id }, 'Get profile error');
     return res.status(500).json({ error: 'Failed to fetch profile' });
   }
 };
@@ -37,38 +42,51 @@ export const getUserProfile = async (req, res) => {
 export const updateUserProfile = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { first_name, last_name } = req.body;
+    const { first_name, last_name, username } = req.body;
     const updates = {};
     if (first_name !== undefined) updates.first_name = first_name;
-    if (last_name !== undefined) updates.last_name = last_name;
+    if (last_name  !== undefined) updates.last_name  = last_name;
+
+    // Username update with uniqueness check
+    if (username !== undefined) {
+      const existing = await User.findByUsername(username);
+      if (existing && existing.id !== userId) {
+        return res.status(409).json({ error: 'Username already taken' });
+      }
+      updates.username = username;
+    }
+
     if (Object.keys(updates).length === 0) {
       return res.status(400).json({ error: 'No fields to update' });
     }
+
     const updatedUser = await User.updateById(userId, updates);
     if (!updatedUser) {
       return res.status(404).json({ error: 'User not found' });
     }
+
     return res.status(200).json({
-      id: updatedUser.id,
-      email: updatedUser.email,
-      username: updatedUser.username,
-      first_name: updatedUser.first_name,
-      last_name: updatedUser.last_name,
-      role: updatedUser.role,
-      is_verified: updatedUser.is_verified,
-      created_at: updatedUser.created_at,
-      updated_at: updatedUser.updated_at
+      id:              updatedUser.id,
+      email:           updatedUser.email,
+      username:        updatedUser.username,
+      first_name:      updatedUser.first_name,
+      last_name:       updatedUser.last_name,
+      role:            updatedUser.role,
+      is_verified:     updatedUser.is_verified,
+      profile_picture: updatedUser.profile_picture,
+      created_at:      updatedUser.created_at,
+      updated_at:      updatedUser.updated_at,
     });
   } catch (error) {
-    logger.error('Update profile error', { error: error.message, userId: req.user?.id });
+    logger.error({ error: error.message, userId: req.user?.id, reqId: req.id }, 'Update profile error');
     return res.status(500).json({ error: 'Failed to update profile' });
   }
 };
 
-// change user password
+// Change user password
 export const changeUserPassword = async (req, res) => {
   try {
-    const pool = getPool();
+    const pool   = getPool();
     const userId = req.user.id;
 
     const result = await pool.query('SELECT * FROM users WHERE id = $1', [userId]);
@@ -96,10 +114,14 @@ export const changeUserPassword = async (req, res) => {
 
     const newHashedPassword = await hashService.hashPassword(newPassword);
     await pool.query('UPDATE users SET password_hash = $1 WHERE id = $2', [newHashedPassword, userId]);
-    logger.info('Password changed', { userId });
+
+    // Revoke all refresh tokens — forces re-login on other devices
+    await Token.revokeAllUserTokens(userId);
+
+    logger.info({ userId, reqId: req.id }, 'Password changed');
     return res.status(200).json({ message: 'Password updated successfully' });
   } catch (error) {
-    logger.error('Change password error', { error: error.message, userId: req.user?.id });
+    logger.error({ error: error.message, userId: req.user?.id, reqId: req.id }, 'Change password error');
     return res.status(500).json({ error: 'Failed to change password' });
   }
 };
@@ -107,39 +129,59 @@ export const changeUserPassword = async (req, res) => {
 // Delete user account
 export const deleteUserAccount = async (req, res) => {
   try {
-    const pool = getPool();
+    const pool   = getPool();
     const userId = req.user.id;
-    const result = await pool.query('SELECT * FROM users WHERE id = $1', [userId]);
+    const result = await pool.query('SELECT id FROM users WHERE id = $1', [userId]);
 
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    // Revoke all refresh tokens before deleting (DB cascade handles the rows,
-    // but cookies may still be alive — clearing them here invalidates the session)
     await Token.revokeAllUserTokens(userId);
     await pool.query('DELETE FROM users WHERE id = $1', [userId]);
-    logger.info('User account deleted', { userId });
+    logger.info({ userId, reqId: req.id }, 'User account deleted');
 
-    const isProd = process.env.NODE_ENV === 'production';
+    const opts = authCookieOpts();
     res
-      .clearCookie('accessToken', { httpOnly: true, secure: isProd, sameSite: isProd ? 'strict' : 'lax', path: '/' })
-      .clearCookie('refreshToken', { httpOnly: true, secure: isProd, sameSite: isProd ? 'strict' : 'lax', path: '/' })
+      .clearCookie('accessToken',  opts)
+      .clearCookie('refreshToken', opts)
       .json({ message: 'User account deleted successfully' });
   } catch (error) {
-    logger.error('Delete account error', { error: error.message, userId: req.user?.id });
+    logger.error({ error: error.message, userId: req.user?.id, reqId: req.id }, 'Delete account error');
     return res.status(500).json({ error: 'Failed to delete account' });
   }
 };
 
-// getAllUsers - for admin
+// Get all users — admin only, paginated
 export const getAllUsers = async (req, res) => {
   try {
-    const pool = getPool();
-    const result = await pool.query('SELECT id, email, username, first_name, last_name, role, is_verified, created_at, updated_at FROM users');
-    return res.status(200).json(result.rows);
+    const pool  = getPool();
+    const page  = Math.max(1, parseInt(req.query.page)  || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 20));
+    const offset = (page - 1) * limit;
+
+    const [usersResult, countResult] = await Promise.all([
+      pool.query(
+        `SELECT id, email, username, first_name, last_name, role, is_verified,
+                auth_provider, created_at, updated_at
+         FROM users ORDER BY created_at DESC LIMIT $1 OFFSET $2`,
+        [limit, offset]
+      ),
+      pool.query('SELECT COUNT(*) AS total FROM users'),
+    ]);
+
+    const total = parseInt(countResult.rows[0].total, 10);
+    return res.status(200).json({
+      users: usersResult.rows,
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit),
+      },
+    });
   } catch (error) {
-    logger.error('Get all users error', { error: error.message });
+    logger.error({ error: error.message, reqId: req.id }, 'Get all users error');
     return res.status(500).json({ error: 'Failed to fetch users' });
   }
 };

@@ -10,50 +10,46 @@ export const initPool = () => {
   if (pool) return pool;
 
   const dbConfig = {
-    host: process.env.DB_HOST || 'localhost',
-    port: parseInt(process.env.DB_PORT || '5432'),
-    user: process.env.DB_USER || 'postgres',
+    host:     process.env.DB_HOST     || 'localhost',
+    port:     parseInt(process.env.DB_PORT || '5432'),
+    user:     process.env.DB_USER     || 'postgres',
     password: process.env.DB_PASSWORD || '',
-    database: process.env.DB_NAME || 'auth_database',
-    max: 20,
-    idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 2000,
+    database: process.env.DB_NAME     || 'auth_database',
+    max:                    20,
+    idleTimeoutMillis:      30000,
+    connectionTimeoutMillis: 5000,
   };
 
-  // Validate config
-  if (!dbConfig.password) {
-    logger.error('Database password is not set in environment variables');
+  // SSL support — required for managed Postgres hosts (Render, Railway, Supabase, RDS, etc.)
+  if (process.env.DB_SSL === 'true') {
+    dbConfig.ssl = { rejectUnauthorized: process.env.DB_SSL_REJECT_UNAUTHORIZED !== 'false' };
   }
 
   pool = new Pool(dbConfig);
 
-  // Test the connection
   pool.on('connect', () => {
-    logger.info('PostgreSQL connected successfully');
+    logger.info('PostgreSQL client connected');
   });
 
   pool.on('error', (err) => {
-    logger.error('Unexpected error on idle PostgreSQL client', { error: err.message });
-    process.exit(-1);
+    // Log the error but do NOT call process.exit here — the pool will attempt
+    // to acquire a new client on the next query, giving transient errors a chance
+    // to recover. Only crash on truly unrecoverable situations.
+    logger.error({ error: err.message }, 'Unexpected error on idle PostgreSQL client');
   });
 
   return pool;
 };
 
-// Get pool instance
+// Get pool instance (auto-initialises if not done yet)
 export const getPool = () => {
-  if (!pool) {
-    return initPool();
-  }
+  if (!pool) return initPool();
   return pool;
 };
 
-// Export pool getter with same interface
+// Alias for legacy import style
 export { getPool as pool };
 
-// Helper function to execute queries
-export const query = (text, params) => getPool().query(text, params);
-
-// Helper function to get a client from the pool
-export const getClient = () => getPool().connect();
-
+// Convenience wrappers
+export const query     = (text, params) => getPool().query(text, params);
+export const getClient = ()             => getPool().connect();

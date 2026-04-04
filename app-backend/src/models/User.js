@@ -95,7 +95,7 @@ export const create = async (user) => {
 
 // Whitelist of columns that are safe to update via this function
 const UPDATABLE_COLUMNS = new Set([
-  'first_name', 'last_name', 'password_hash', 'is_verified',
+  'first_name', 'last_name', 'username', 'password_hash', 'is_verified',
   'is_active', 'role', 'google_id', 'auth_provider', 'profile_picture', 'last_login',
 ]);
 

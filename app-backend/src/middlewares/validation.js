@@ -94,11 +94,12 @@ export const profileUpdateValidation = [
     .trim()
     .isLength({ max: 100 })
     .withMessage('Last name must be less than 100 characters'),
-  body('email')
+  body('username')
     .optional()
-    .isEmail()
-    .normalizeEmail()
-    .withMessage('Valid email required'),
+    .isLength({ min: 3, max: 30 })
+    .trim()
+    .isAlphanumeric()
+    .withMessage('Username must be 3-30 alphanumeric characters'),
   validate
 ];
 

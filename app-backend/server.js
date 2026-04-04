@@ -4,6 +4,19 @@ import { initPool, getPool } from "./src/config/database.js";
 import Token from "./src/models/Token.js";
 import logger from './src/utils/logger.js';
 
+// ── Global error guards ───────────────────────────────────────────────────────
+// Must be registered before anything else so even startup errors are caught.
+process.on('uncaughtException', (err) => {
+  logger.fatal({ err }, 'Uncaught exception — shutting down');
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason) => {
+  logger.fatal({ reason }, 'Unhandled promise rejection — shutting down');
+  process.exit(1);
+});
+// ─────────────────────────────────────────────────────────────────────────────
+
 // ── Startup environment validation ───────────────────────────────────────────
 const REQUIRED_ENV = [
   'JWT_ACCESS_SECRET',
@@ -34,7 +47,7 @@ const PORT = process.env.PORT || 3000;
 // Initialize database pool
 initPool();
 
-//intialize database tables
+// Initialize database tables
 await initializeDatabase();
 
 const server = app.listen(PORT, '0.0.0.0', () => {
@@ -42,35 +55,35 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`✓ Server is ready and listening on http://localhost:${PORT}`);
 });
 
-// Purge expired tokens every 6 hours
+// ── Background token/session cleanup (every 6 hours) ─────────────────────────
 setInterval(async () => {
   try {
     await Token.deleteExpiredTokens();
-    logger.info('Expired tokens purged');
+    logger.info('Expired tokens and stale login attempts purged');
   } catch (err) {
-    logger.error('Token cleanup failed', { error: err.message });
+    logger.error({ error: err.message }, 'Token cleanup failed');
   }
 }, 6 * 60 * 60 * 1000);
+// ─────────────────────────────────────────────────────────────────────────────
 
-// Prevent process from exiting
+// Prevent process from exiting in environments without active I/O
 process.stdin.resume();
 
-// Handle server errors
+// Handle server-level errors (e.g. EADDRINUSE)
 server.on('error', (error) => {
-  console.error("EXPLICIT SERVER ERROR CAUGHT: ", error);
-  logger.error('Server error:', error);
+  logger.fatal({ error }, 'HTTP server error');
   process.exit(1);
 });
 
-// Graceful shutdown
+// ── Graceful shutdown ─────────────────────────────────────────────────────────
 const shutdown = (signal) => {
-  logger.info(`${signal} received, closing server...`);
+  logger.info(`${signal} received — closing server…`);
   server.close(async () => {
     try {
       await getPool().end();
       logger.info('Database pool closed');
     } catch (_) {}
-    logger.info('Server closed');
+    logger.info('Server closed cleanly');
     process.exit(0);
   });
 };

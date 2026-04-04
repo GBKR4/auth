@@ -5,7 +5,8 @@ import crypto from 'crypto';
 // Hash a token before storing/querying — raw token never touches the DB
 const hashToken = (token) => crypto.createHash('sha256').update(token).digest('hex');
 
-// Refresh Tokens
+// ── Refresh Tokens ────────────────────────────────────────────────────────────
+
 export const createRefreshToken = async (userId, token, expiresAt) => {
   const pool = getPool();
   const result = await pool.query(
@@ -18,14 +19,10 @@ export const createRefreshToken = async (userId, token, expiresAt) => {
 export const findRefreshToken = async (token) => {
   const pool = getPool();
   const result = await pool.query(
-    `SELECT * FROM refresh_tokens WHERE token = $1 AND is_revoked = false`,
+    `SELECT * FROM refresh_tokens WHERE token = $1 AND is_revoked = false AND expires_at > NOW()`,
     [hashToken(token)]
   );
-
-  if (result.rows.length === 0) {
-    return null;
-  }
-  return result.rows[0];
+  return result.rows[0] ?? null;
 };
 
 export const revokeRefreshToken = async (token) => {
@@ -46,7 +43,8 @@ export const revokeAllUserTokens = async (userId) => {
   return true;
 };
 
-// Verification Tokens
+// ── Verification Tokens (email_verification, password_reset, oauth_code) ──────
+
 export const createVerificationToken = async (userId, token, tokenType, expiresAt) => {
   const pool = getPool();
   const result = await pool.query(
@@ -59,14 +57,11 @@ export const createVerificationToken = async (userId, token, tokenType, expiresA
 export const findVerificationToken = async (token, tokenType) => {
   const pool = getPool();
   const result = await pool.query(
-    `SELECT * FROM verification_tokens WHERE token = $1 AND token_type = $2 AND used_at IS NULL AND expires_at > NOW()`,
+    `SELECT * FROM verification_tokens
+     WHERE token = $1 AND token_type = $2 AND used_at IS NULL AND expires_at > NOW()`,
     [hashToken(token), tokenType]
   );
-
-  if (result.rows.length === 0) {
-    return null;
-  }
-  return result.rows[0];
+  return result.rows[0] ?? null;
 };
 
 export const markTokenAsUsed = async (token) => {
@@ -78,19 +73,34 @@ export const markTokenAsUsed = async (token) => {
   return true;
 };
 
-export const deleteExpiredTokens = async () => {
-  const pool = getPool();
-  await pool.query('DELETE FROM refresh_tokens WHERE expires_at < NOW()');
-  await pool.query('DELETE FROM verification_tokens WHERE expires_at < NOW()');
-  return true;
-};
-
-// Invalidate all pending verification tokens for a user (used before issuing a new one)
 export const invalidateUserVerificationTokens = async (userId, tokenType) => {
   const pool = getPool();
   await pool.query(
-    `UPDATE verification_tokens SET used_at = NOW() WHERE user_id = $1 AND token_type = $2 AND used_at IS NULL`,
+    `UPDATE verification_tokens SET used_at = NOW()
+     WHERE user_id = $1 AND token_type = $2 AND used_at IS NULL`,
     [userId, tokenType]
+  );
+  return true;
+};
+
+// ── OAuth one-time code ───────────────────────────────────────────────────────
+// A short-lived (5 min) single-use code that maps to a userId.
+// The frontend exchanges it for real JWT tokens via POST /api/auth/google/exchange.
+
+export const createOAuthCode = async (userId, code, expiresAt) => {
+  return createVerificationToken(userId, code, 'oauth_code', expiresAt);
+};
+
+// ── Cleanup ───────────────────────────────────────────────────────────────────
+// Called by the background interval in server.js every 6 hours.
+
+export const deleteExpiredTokens = async () => {
+  const pool = getPool();
+  await pool.query(`DELETE FROM refresh_tokens      WHERE expires_at < NOW()`);
+  await pool.query(`DELETE FROM verification_tokens WHERE expires_at < NOW()`);
+  // Keep login_attempts for 30 days for audit/monitoring; purge older rows
+  await pool.query(
+    `DELETE FROM login_attempts WHERE attempted_at < NOW() - INTERVAL '30 days'`
   );
   return true;
 };
@@ -103,6 +113,7 @@ export default {
   createVerificationToken,
   findVerificationToken,
   markTokenAsUsed,
-  deleteExpiredTokens,
   invalidateUserVerificationTokens,
+  createOAuthCode,
+  deleteExpiredTokens,
 };
