@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import passport from '../config/passport.js';
 import { googleAuthCallback, googleAuthFailure, googleAuthExchange } from '../controllers/googleAuthController.js';
+import { oauthExchangeLimiter } from '../middlewares/rateLimiter.js';
 
 // ── Allowed-origin guard ──────────────────────────────────────────────────────
 const getAllowedOrigins = () => {
@@ -52,7 +53,7 @@ router.get(
 
 // Exchange a one-time OAuth code for JWT tokens
 // The frontend calls this after receiving the code in the redirect query param.
-router.post('/google/exchange', googleAuthExchange);
+router.post('/google/exchange', oauthExchangeLimiter, googleAuthExchange);
 
 // Google auth failure route
 router.get('/google/failure', googleAuthFailure);

@@ -4,8 +4,12 @@ import authRoutes from './auth.js';
 import userRoutes from './user.js';
 import googleAuthRoutes from './googleAuth.js';
 import { getPool } from '../config/database.js';
+import { apiLimiter } from '../middlewares/rateLimiter.js';
 
 const router = Router();
+
+// Global rate limit — 100 req / 15 min per IP across all endpoints
+router.use(apiLimiter);
 
 // Health check — used by load balancers, Docker, and uptime monitors
 router.get('/health', async (req, res) => {
