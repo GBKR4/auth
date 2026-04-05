@@ -37,8 +37,12 @@ export const sendEmail = async (to, subject, html) => {
 };
 
 export const sendVerificationEmail = async (email, token, clientUrl) => {
-  const baseUrl = clientUrl || process.env.FRONTEND_URL || 'http://localhost:5173';
-  const verificationLink = `${baseUrl}/verify-email/${token}`;
+  // Verification is handled by the auth server itself — the link goes directly
+  // to GET /api/auth/verify/:token on localhost:3000.
+  // clientUrl is kept as the post-verification redirect destination (passed as ?redirect=).
+  const authServerUrl = process.env.AUTH_SERVER_URL || 'http://localhost:3000';
+  const redirectTo   = clientUrl || process.env.FRONTEND_URL || 'http://localhost:5173';
+  const verificationLink = `${authServerUrl}/api/auth/verify/${token}?redirect=${encodeURIComponent(redirectTo + '/login?verified=true')}`;
   await sendEmail(
     email,
     'Verify Your Email Address',
@@ -47,8 +51,10 @@ export const sendVerificationEmail = async (email, token, clientUrl) => {
 };
 
 export const sendPasswordResetEmail = async (email, token, clientUrl) => {
-  const baseUrl = clientUrl || process.env.FRONTEND_URL || 'http://localhost:5173';
-  const resetLink = `${baseUrl}/reset-password/${token}`;
+  // Reset form is served by the auth server itself at /reset-password/:token
+  const authServerUrl = process.env.AUTH_SERVER_URL || 'http://localhost:3000';
+  const redirectTo    = clientUrl || process.env.FRONTEND_URL || 'http://localhost:5173';
+  const resetLink = `${authServerUrl}/reset-password/${token}?redirect=${encodeURIComponent(redirectTo + '/login?reset=true')}`;
   await sendEmail(
     email,
     'Reset Your Password',

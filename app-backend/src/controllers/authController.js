@@ -267,14 +267,27 @@ export const refreshToken = async (req, res) => {
 export const verifyEmail = async (req, res) => {
   try {
     const { token } = req.params;
+    const { redirect } = req.query; // optional post-verify redirect URL from email link
 
     const tokenRecord = await Token.findVerificationToken(token, 'email_verification');
     if (!tokenRecord) {
+      // If browser request, show a simple error page
+      if (redirect || req.headers['accept']?.includes('text/html')) {
+        const dest = redirect ? new URL(redirect) : new URL(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/login`);
+        dest.searchParams.set('error', 'Invalid or expired verification link');
+        return res.redirect(dest.toString());
+      }
       return res.status(400).json({ error: 'Invalid or expired verification token' });
     }
 
     await User.markAsVerified(tokenRecord.user_id);
     await Token.markTokenAsUsed(token);
+
+    // Redirect browser to login page with success flag
+    if (redirect || req.headers['accept']?.includes('text/html')) {
+      const safeRedirect = redirect || `${process.env.FRONTEND_URL || 'http://localhost:5173'}/login`;
+      return res.redirect(safeRedirect);
+    }
 
     res.json({ message: 'Email verified successfully. You can now login.' });
   } catch (error) {

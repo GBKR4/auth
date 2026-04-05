@@ -106,3 +106,35 @@ CREATE TRIGGER update_users_updated_at
     BEFORE UPDATE ON users
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
+
+-- ── OAuth Clients Table ───────────────────────────────────────────────────────
+-- Stores apps registered via the Developer Portal.
+-- client_secret is always SHA-256 hashed — NEVER stored raw.
+CREATE TABLE IF NOT EXISTS oauth_clients (
+    id              SERIAL PRIMARY KEY,
+    client_id       VARCHAR(100) UNIQUE NOT NULL,
+    client_secret   VARCHAR(255) NOT NULL,
+    name            VARCHAR(100) NOT NULL,
+    redirect_uris   TEXT[] NOT NULL,
+    developer_id    INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    created_at      TIMESTAMP DEFAULT NOW()
+);
+
+-- ── OAuth Authorization Codes Table ──────────────────────────────────────────
+-- One-time codes issued during the OAuth authorize flow.
+-- code is SHA-256 hashed — NEVER stored raw.
+-- Expires in 5 minutes, single-use only (used_at IS NULL = unused).
+CREATE TABLE IF NOT EXISTS oauth_auth_codes (
+    id              SERIAL PRIMARY KEY,
+    code            VARCHAR(255) UNIQUE NOT NULL,
+    client_id       VARCHAR(100) NOT NULL,
+    user_id         INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    redirect_uri    TEXT NOT NULL,
+    code_challenge  VARCHAR(255),
+    expires_at      TIMESTAMP NOT NULL,
+    used_at         TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_oauth_clients_developer ON oauth_clients(developer_id);
+CREATE INDEX IF NOT EXISTS idx_oauth_auth_codes_code   ON oauth_auth_codes(code);
+CREATE INDEX IF NOT EXISTS idx_oauth_auth_codes_client ON oauth_auth_codes(client_id);

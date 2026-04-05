@@ -38,7 +38,20 @@ export const authorizeRoles = (...roles) => {
   };
 };
 
+/**
+ * requireRole(...roles)
+ * Middleware that checks req.user.role is in the allowed roles list.
+ * Must be used after authenticateToken.
+ */
+export const requireRole = (...roles) => (req, res, next) => {
+  if (!req.user || !roles.includes(req.user.role)) {
+    return res.status(403).json({ error: 'Insufficient permissions' });
+  }
+  next();
+};
+
 export default {
   authenticateToken,
-  authorizeRoles
-};
+  authorizeRoles,
+  requireRole,
+};

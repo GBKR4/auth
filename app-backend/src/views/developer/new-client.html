@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Register New App — Developer Portal</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0f1117; --surface: #1a1d27; --border: #2a2d3e;
+      --primary: #6c63ff; --primary-hover: #5a52e0;
+      --text: #e2e8f0; --muted: #94a3b8; --danger: #ef4444;
+      --radius: 10px;
+    }
+    body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+    nav { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 2rem; display: flex; align-items: center; height: 60px; gap: 1rem; }
+    .nav-brand { font-weight: 700; font-size: 1.1rem; color: var(--primary); }
+    .nav-sep { color: var(--border); }
+    .nav-page { color: var(--muted); font-size: 0.9rem; }
+    main { max-width: 620px; margin: 3rem auto; padding: 0 1.5rem; }
+    h1 { font-size: 1.5rem; font-weight: 700; margin-bottom: 0.4rem; }
+    .subtitle { color: var(--muted); font-size: 0.9rem; margin-bottom: 2rem; }
+
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 2rem; }
+    .form-group { margin-bottom: 1.5rem; }
+    label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.4rem; color: var(--text); }
+    .hint { font-size: 0.78rem; color: var(--muted); margin-top: 0.25rem; }
+    input[type="text"], input[type="url"] {
+      width: 100%; background: var(--bg); border: 1px solid var(--border); color: var(--text);
+      padding: 0.65rem 0.9rem; border-radius: 7px; font-size: 0.9rem; outline: none; transition: border 0.2s;
+    }
+    input:focus { border-color: var(--primary); }
+    input.error-input { border-color: var(--danger); }
+
+    /* Redirect URIs dynamic list */
+    .uri-list { display: flex; flex-direction: column; gap: 0.5rem; }
+    .uri-row { display: flex; gap: 0.5rem; align-items: center; }
+    .uri-row input { flex: 1; }
+    .remove-uri { background: transparent; border: 1px solid var(--border); color: var(--muted); width: 32px; height: 32px; border-radius: 6px; cursor: pointer; font-size: 1rem; flex-shrink: 0; transition: all 0.2s; display: flex; align-items: center; justify-content: center; }
+    .remove-uri:hover { border-color: var(--danger); color: var(--danger); }
+    .add-uri { background: transparent; border: 1px dashed var(--border); color: var(--muted); padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; font-size: 0.83rem; margin-top: 0.25rem; transition: all 0.2s; width: 100%; }
+    .add-uri:hover { border-color: var(--primary); color: var(--primary); }
+
+    /* Actions */
+    .form-actions { display: flex; gap: 0.75rem; margin-top: 2rem; }
+    .btn-primary { background: var(--primary); color: #fff; border: none; padding: 0.65rem 1.4rem; border-radius: 8px; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: background 0.2s; flex: 1; }
+    .btn-primary:hover:not(:disabled) { background: var(--primary-hover); }
+    .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+    .btn-cancel { background: transparent; border: 1px solid var(--border); color: var(--muted); padding: 0.65rem 1.4rem; border-radius: 8px; font-size: 0.9rem; cursor: pointer; transition: all 0.2s; text-decoration: none; display: inline-block; text-align: center; }
+    .btn-cancel:hover { border-color: var(--text); color: var(--text); }
+
+    .error-msg { background: rgba(239,68,68,0.1); border: 1px solid var(--danger); color: var(--danger); padding: 0.75rem 1rem; border-radius: 7px; font-size: 0.85rem; margin-bottom: 1.25rem; display: none; }
+    .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; margin-right: 6px; vertical-align: middle; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <nav>
+    <a href="/developer" class="nav-brand">⚡ Developer Portal</a>
+    <span class="nav-sep">/</span>
+    <span class="nav-page">Register New App</span>
+  </nav>
+
+  <main>
+    <h1>Register OAuth App</h1>
+    <p class="subtitle">Your app will receive a client_id and client_secret to use the OAuth 2.0 flow.</p>
+
+    <div class="card">
+      <div class="error-msg" id="error-msg"></div>
+
+      <form id="register-form" novalidate>
+        <div class="form-group">
+          <label for="name">App Name *</label>
+          <input type="text" id="name" name="name" placeholder="e.g. CollabDocs" maxlength="100" autocomplete="off" />
+          <div class="hint">2–100 characters. This is shown to users during login.</div>
+        </div>
+
+        <div class="form-group">
+          <label>Redirect URIs *</label>
+          <div class="uri-list" id="uri-list">
+            <div class="uri-row">
+              <input type="url" placeholder="http://localhost:5173/auth/callback" />
+              <button type="button" class="remove-uri" onclick="removeUri(this)" title="Remove">×</button>
+            </div>
+          </div>
+          <button type="button" class="add-uri" onclick="addUri()">+ Add another redirect URI</button>
+          <div class="hint">Only these URLs are allowed as OAuth callback destinations.</div>
+        </div>
+
+        <div class="form-actions">
+          <a href="/developer" class="btn-cancel">Cancel</a>
+          <button type="submit" class="btn-primary" id="submit-btn">Register App</button>
+        </div>
+      </form>
+    </div>
+  </main>
+
+  <script>
+    function addUri() {
+      const list = document.getElementById('uri-list');
+      const row = document.createElement('div');
+      row.className = 'uri-row';
+      row.innerHTML = `<input type="url" placeholder="https://your-app.com/auth/callback" />
+        <button type="button" class="remove-uri" onclick="removeUri(this)" title="Remove">×</button>`;
+      list.appendChild(row);
+      row.querySelector('input').focus();
+    }
+
+    function removeUri(btn) {
+      const list = document.getElementById('uri-list');
+      if (list.children.length <= 1) { alert('At least one redirect URI is required.'); return; }
+      btn.parentElement.remove();
+    }
+
+    document.getElementById('register-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const name = document.getElementById('name').value.trim();
+      const uriInputs = document.querySelectorAll('#uri-list input');
+      const redirect_uris = [...uriInputs].map(i => i.value.trim()).filter(Boolean);
+
+      // Basic client-side validation
+      if (name.length < 2) { showError('App name must be at least 2 characters.'); return; }
+      if (redirect_uris.length === 0) { showError('At least one redirect URI is required.'); return; }
+      for (const uri of redirect_uris) {
+        try { new URL(uri); } catch { showError(`Invalid URL: ${uri}`); return; }
+      }
+
+      const btn = document.getElementById('submit-btn');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span>Registering…';
+      hideError();
+
+      try {
+        const res = await fetch('/api/developer/clients', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ name, redirect_uris }),
+        });
+        const data = await res.json();
+
+        if (!res.ok) { showError(data.error || 'Registration failed'); btn.disabled = false; btn.textContent = 'Register App'; return; }
+
+        // Store credentials in sessionStorage — dashboard will show them in modal
+        sessionStorage.setItem('new_client_credentials', JSON.stringify({
+          client_id: data.client_id,
+          client_secret: data.client_secret,
+          name: data.name,
+        }));
+        window.location.href = '/developer';
+      } catch (err) {
+        showError('Network error. Please try again.');
+        btn.disabled = false;
+        btn.textContent = 'Register App';
+      }
+    });
+
+    function showError(msg) { const el = document.getElementById('error-msg'); el.textContent = msg; el.style.display = 'block'; }
+    function hideError() { document.getElementById('error-msg').style.display = 'none'; }
+  </script>
+</body>
+</html>

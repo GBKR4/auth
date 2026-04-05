@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Create Account</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0f1117; --surface: #1a1d27; --border: #2a2d3e;
+      --primary: #6c63ff; --primary-hover: #5a52e0;
+      --text: #e2e8f0; --muted: #94a3b8; --danger: #ef4444; --success: #22c55e;
+      --radius: 12px;
+    }
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg); color: var(--text);
+      min-height: 100vh; display: flex;
+      flex-direction: column; align-items: center; justify-content: center; padding: 1.5rem;
+    }
+    .card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 2.5rem 2rem;
+      width: 100%; max-width: 420px;
+    }
+    .logo { text-align: center; margin-bottom: 1.75rem; }
+    .logo-icon { font-size: 2rem; }
+    .logo-title { font-size: 1.3rem; font-weight: 700; margin-top: 0.4rem; }
+    .logo-sub { font-size: 0.85rem; color: var(--muted); margin-top: 0.25rem; }
+    .app-name { color: var(--primary); font-weight: 600; }
+
+    .row { display: flex; gap: 0.75rem; }
+    .row .form-group { flex: 1; }
+    .form-group { margin-bottom: 1rem; }
+    label { display: block; font-size: 0.82rem; font-weight: 600; margin-bottom: 0.35rem; }
+    input {
+      width: 100%; background: var(--bg); border: 1px solid var(--border);
+      color: var(--text); padding: 0.65rem 0.9rem; border-radius: 8px;
+      font-size: 0.9rem; outline: none; transition: border 0.2s;
+    }
+    input:focus { border-color: var(--primary); }
+    .hint { font-size: 0.73rem; color: var(--muted); margin-top: 0.3rem; }
+
+    .btn {
+      width: 100%; background: var(--primary); color: #fff; border: none;
+      padding: 0.72rem; border-radius: 8px; font-size: 0.92rem; font-weight: 600;
+      cursor: pointer; transition: background 0.2s; margin-top: 0.4rem;
+    }
+    .btn:hover:not(:disabled) { background: var(--primary-hover); }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    .alert { padding: 0.7rem 1rem; border-radius: 7px; font-size: 0.84rem; margin-bottom: 1.1rem; display: none; }
+    .alert-error   { background: rgba(239,68,68,0.1);  border: 1px solid var(--danger);  color: var(--danger);  }
+    .alert-success { background: rgba(34,197,94,0.1);  border: 1px solid var(--success); color: var(--success); }
+
+    .footer { text-align: center; font-size: 0.82rem; color: var(--muted); margin-top: 1.25rem; }
+    .footer a { color: var(--primary); text-decoration: none; }
+
+    .spinner {
+      display: inline-block; width: 14px; height: 14px;
+      border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff;
+      border-radius: 50%; animation: spin 0.7s linear infinite;
+      margin-right: 6px; vertical-align: middle;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="card">
+    <div class="logo">
+      <div class="logo-icon">⚡</div>
+      <div class="logo-title">Create your account</div>
+      <div class="logo-sub">to continue to <span class="app-name" id="app-name">the app</span></div>
+    </div>
+
+    <div class="alert alert-error"   id="error-box"></div>
+    <div class="alert alert-success" id="success-box"></div>
+
+    <form id="register-form" novalidate>
+      <div class="row">
+        <div class="form-group">
+          <label for="first_name">First name *</label>
+          <input type="text" id="first_name" placeholder="John" required />
+        </div>
+        <div class="form-group">
+          <label for="last_name">Last name</label>
+          <input type="text" id="last_name" placeholder="Doe" />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="username">Username *</label>
+        <input type="text" id="username" placeholder="johndoe" required />
+        <div class="hint">3–30 alphanumeric characters</div>
+      </div>
+
+      <div class="form-group">
+        <label for="email">Email *</label>
+        <input type="email" id="email" placeholder="you@example.com" required />
+      </div>
+
+      <div class="form-group">
+        <label for="password">Password *</label>
+        <input type="password" id="password" placeholder="Min 8 characters" required />
+        <div class="hint">Must include: uppercase · lowercase · number · special char (@$!%*?&amp;)<br>
+        Example: <code style="color:var(--primary)">MyPass@123</code></div>
+      </div>
+
+      <button type="submit" class="btn" id="submit-btn">Create Account</button>
+    </form>
+
+    <div class="footer">
+      Already have an account? <a href="#" id="signin-link">Sign in</a>
+    </div>
+  </div>
+
+  <script>
+    // Read OAuth params from URL to pass back after registration
+    const params   = new URLSearchParams(window.location.search);
+    // Ensure response_type is always present for the authorize redirect
+    if (!params.get('response_type')) params.set('response_type', 'code');
+    const appName  = params.get('app_name') || 'the app';
+    document.getElementById('app-name').textContent = appName;
+
+    // Sign in link — goes back to /oauth/authorize with same params
+    document.getElementById('signin-link').href = `/oauth/authorize?${params.toString()}`;
+
+    document.getElementById('register-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const first_name = document.getElementById('first_name').value.trim();
+      const last_name  = document.getElementById('last_name').value.trim();
+      const username   = document.getElementById('username').value.trim();
+      const email      = document.getElementById('email').value.trim();
+      const password   = document.getElementById('password').value;
+      const btn        = document.getElementById('submit-btn');
+
+      if (!first_name || !username || !email || !password) {
+        showError('Please fill in all required fields.'); return;
+      }
+
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span>Creating account…';
+      hideAll();
+
+      try {
+        const res = await fetch('/api/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ first_name, last_name, username, email, password }),
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+          let msg = data.error || data.message;
+          if (!msg && data.errors?.length) msg = data.errors.map(e => e.msg).join(' · ');
+          showError(msg || 'Registration failed. Check your inputs.');
+          btn.disabled = false; btn.textContent = 'Create Account';
+          return;
+        }
+
+        showSuccess('✅ Account created! Check your email to verify it, then sign in.');
+        document.getElementById('register-form').style.display = 'none';
+
+        // Redirect back to OAuth login after 4 seconds
+        setTimeout(() => {
+          window.location.href = `/oauth/authorize?${params.toString()}`;
+        }, 4000);
+
+      } catch {
+        showError('Network error. Is the server running?');
+        btn.disabled = false; btn.textContent = 'Create Account';
+      }
+    });
+
+    function showError(msg)   { const el = document.getElementById('error-box');   el.textContent = msg; el.style.display = 'block'; }
+    function showSuccess(msg) { const el = document.getElementById('success-box'); el.textContent = msg; el.style.display = 'block'; }
+    function hideAll()        { document.getElementById('error-box').style.display = 'none'; document.getElementById('success-box').style.display = 'none'; }
+  </script>
+</body>
+</html>

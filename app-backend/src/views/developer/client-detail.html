@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>App Detail — Developer Portal</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0f1117; --surface: #1a1d27; --border: #2a2d3e;
+      --primary: #6c63ff; --primary-hover: #5a52e0;
+      --text: #e2e8f0; --muted: #94a3b8; --danger: #ef4444;
+      --warning: #f59e0b; --radius: 10px;
+    }
+    body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+    nav { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 2rem; display: flex; align-items: center; height: 60px; gap: 1rem; }
+    .nav-brand { font-weight: 700; font-size: 1.1rem; color: var(--primary); text-decoration: none; }
+    .nav-sep { color: var(--border); }
+    .nav-page { color: var(--muted); font-size: 0.9rem; }
+    main { max-width: 700px; margin: 2.5rem auto; padding: 0 1.5rem; }
+    .back-link { color: var(--muted); font-size: 0.85rem; text-decoration: none; display: inline-flex; align-items: center; gap: 0.4rem; margin-bottom: 1.5rem; transition: color 0.2s; }
+    .back-link:hover { color: var(--primary); }
+    h1 { font-size: 1.5rem; font-weight: 700; margin-bottom: 0.3rem; }
+    .app-name { color: var(--primary); }
+
+    .section { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; margin-bottom: 1.25rem; }
+    .section-title { font-size: 0.8rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 1rem; }
+    .field-row { margin-bottom: 1rem; }
+    .field-label { font-size: 0.8rem; color: var(--muted); margin-bottom: 0.3rem; }
+    .field-value { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 0.6rem 0.9rem; font-family: monospace; font-size: 0.85rem; display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; word-break: break-all; }
+    .copy-btn { background: var(--primary); border: none; color: #fff; padding: 0.25rem 0.6rem; border-radius: 4px; font-size: 0.75rem; cursor: pointer; flex-shrink: 0; transition: background 0.2s; }
+    .copy-btn:hover { background: var(--primary-hover); }
+
+    .uri-tag { display: inline-block; background: rgba(108,99,255,0.1); color: var(--primary); border: 1px solid rgba(108,99,255,0.3); padding: 0.25rem 0.65rem; border-radius: 20px; font-size: 0.82rem; font-family: monospace; margin: 0.2rem 0.2rem 0 0; }
+
+    /* Buttons */
+    .btn-primary { background: var(--primary); color: #fff; border: none; padding: 0.6rem 1.2rem; border-radius: 8px; font-size: 0.88rem; font-weight: 600; cursor: pointer; transition: background 0.2s; }
+    .btn-primary:hover { background: var(--primary-hover); }
+    .btn-danger { background: transparent; border: 1px solid var(--danger); color: var(--danger); padding: 0.6rem 1.2rem; border-radius: 8px; font-size: 0.88rem; cursor: pointer; transition: all 0.2s; }
+    .btn-danger:hover { background: var(--danger); color: #fff; }
+    .row { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
+
+    /* Warning banner */
+    .warning-box { background: rgba(245,158,11,0.1); border: 1px solid var(--warning); color: var(--warning); padding: 0.75rem 1rem; border-radius: 7px; font-size: 0.85rem; margin-bottom: 1rem; }
+
+    /* Secret modal */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.75); display: none; align-items: center; justify-content: center; z-index: 100; }
+    .modal-overlay.active { display: flex; }
+    .modal { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 2rem; max-width: 520px; width: 90%; }
+    .modal h2 { margin-bottom: 0.5rem; }
+    .modal-warning { background: rgba(245,158,11,0.1); border: 1px solid var(--warning); color: var(--warning); padding: 0.75rem 1rem; border-radius: 6px; font-size: 0.84rem; margin: 1rem 0; }
+    .modal-field { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 0.75rem 1rem; font-family: monospace; font-size: 0.85rem; margin: 0.4rem 0 0.75rem; word-break: break-all; position: relative; }
+    .modal-label { font-size: 0.8rem; color: var(--muted); }
+    .modal-copy { position: absolute; right: 0.5rem; top: 50%; transform: translateY(-50%); background: var(--primary); border: none; color: #fff; padding: 0.2rem 0.55rem; border-radius: 4px; font-size: 0.74rem; cursor: pointer; }
+    .modal-done { background: var(--primary); color: #fff; border: none; padding: 0.65rem; border-radius: 8px; font-size: 0.9rem; font-weight: 600; cursor: pointer; width: 100%; margin-top: 0.5rem; }
+
+    #loading { color: var(--muted); padding: 3rem; text-align: center; }
+    #error-msg { background: rgba(239,68,68,0.1); border: 1px solid var(--danger); color: var(--danger); padding: 0.75rem 1rem; border-radius: 7px; font-size: 0.85rem; margin-bottom: 1rem; display: none; }
+    #content { display: none; }
+  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <nav>
+    <a href="/developer" class="nav-brand">⚡ Developer Portal</a>
+    <span class="nav-sep">/</span>
+    <span class="nav-page" id="nav-app-name">App Detail</span>
+  </nav>
+
+  <main>
+    <a href="/developer" class="back-link">← Back to Apps</a>
+    <div id="loading">Loading app details…</div>
+    <div id="error-msg"></div>
+
+    <div id="content">
+      <h1>App: <span class="app-name" id="app-name-title"></span></h1>
+      <p style="color:var(--muted);font-size:0.85rem;margin:0.3rem 0 1.5rem">Manage your OAuth app credentials and settings.</p>
+
+      <!-- Credentials -->
+      <div class="section">
+        <div class="section-title">Credentials</div>
+        <div class="field-row">
+          <div class="field-label">Client ID</div>
+          <div class="field-value">
+            <span id="client-id-val"></span>
+            <button class="copy-btn" onclick="copyText('client-id-val')">Copy</button>
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field-label">Client Secret</div>
+          <div class="field-value" style="color:var(--muted);font-style:italic;">
+            <span>••••••••••••••••••••••••••••••••</span>
+            <button class="copy-btn" onclick="rotateSecret()" style="background:#2a2d3e;color:var(--text);">Rotate</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Redirect URIs -->
+      <div class="section">
+        <div class="section-title">Allowed Redirect URIs</div>
+        <div id="uris-container"></div>
+      </div>
+
+      <!-- Created -->
+      <div class="section">
+        <div class="section-title">Info</div>
+        <div class="field-row">
+          <div class="field-label">Created</div>
+          <div style="font-size:0.9rem;color:var(--muted)" id="created-at"></div>
+        </div>
+      </div>
+
+      <!-- Danger zone -->
+      <div class="section" style="border-color:rgba(239,68,68,0.3)">
+        <div class="section-title" style="color:var(--danger)">Danger Zone</div>
+        <p style="font-size:0.85rem;color:var(--muted);margin-bottom:1rem">Deleting this app immediately revokes all associated tokens. This cannot be undone.</p>
+        <button class="btn-danger" onclick="deleteApp()">Delete This App</button>
+      </div>
+    </div>
+  </main>
+
+  <!-- Rotate secret modal -->
+  <div class="modal-overlay" id="secret-modal">
+    <div class="modal">
+      <h2>🔄 Secret Rotated</h2>
+      <div class="modal-warning">⚠️ Save your new Client Secret now — it will <strong>never be shown again</strong>. Your old secret is now invalid.</div>
+      <div class="modal-label">New Client Secret</div>
+      <div class="modal-field" id="new-secret-val">
+        <button class="modal-copy" onclick="copyModalSecret()">Copy</button>
+      </div>
+      <button class="modal-done" onclick="closeModal()">Done — I've saved my new secret</button>
+    </div>
+  </div>
+
+  <script>
+    const API = '/api/developer';
+    const appId = window.location.pathname.split('/').pop();
+    let appData = null;
+
+    async function loadApp() {
+      try {
+        const res = await fetch(`${API}/clients`, { credentials: 'include' });
+        if (res.status === 401) { window.location.href = '/developer/login'; return; }
+        const data = await res.json();
+        appData = data.clients?.find(c => String(c.id) === String(appId));
+        if (!appData) { showError('App not found or you do not have access.'); document.getElementById('loading').style.display = 'none'; return; }
+        renderApp(appData);
+      } catch { showError('Failed to load app details.'); document.getElementById('loading').style.display = 'none'; }
+    }
+
+    function renderApp(app) {
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('content').style.display = 'block';
+      document.getElementById('nav-app-name').textContent = app.name;
+      document.getElementById('app-name-title').textContent = app.name;
+      document.getElementById('client-id-val').textContent = app.client_id;
+      document.getElementById('created-at').textContent = new Date(app.created_at).toLocaleString();
+      document.getElementById('uris-container').innerHTML = app.redirect_uris.map(u => `<span class="uri-tag">${escape(u)}</span>`).join('');
+    }
+
+    async function rotateSecret() {
+      if (!confirm('Rotate the client secret? Your old secret will immediately stop working.')) return;
+      try {
+        const res = await fetch(`${API}/clients/${appId}/rotate`, { method: 'POST', credentials: 'include' });
+        const data = await res.json();
+        if (!res.ok) { showError(data.error || 'Failed to rotate secret'); return; }
+        const modal = document.getElementById('secret-modal');
+        const field = document.getElementById('new-secret-val');
+        field.childNodes[0]?.remove?.();
+        field.insertAdjacentText('afterbegin', data.client_secret);
+        modal.classList.add('active');
+      } catch { showError('Failed to rotate secret'); }
+    }
+
+    function copyModalSecret() {
+      const text = document.getElementById('new-secret-val').childNodes[0]?.textContent?.trim();
+      navigator.clipboard.writeText(text).then(() => {
+        const btn = document.querySelector('.modal-copy');
+        btn.textContent = 'Copied!';
+        setTimeout(() => btn.textContent = 'Copy', 1500);
+      });
+    }
+
+    function closeModal() { document.getElementById('secret-modal').classList.remove('active'); }
+
+    async function deleteApp() {
+      if (!confirm(`Delete "${appData?.name}"? All tokens will be revoked. This cannot be undone.`)) return;
+      const res = await fetch(`${API}/clients/${appId}`, { method: 'DELETE', credentials: 'include' });
+      if (res.ok) { window.location.href = '/developer'; }
+      else { const d = await res.json(); showError(d.error || 'Failed to delete app'); }
+    }
+
+    function copyText(id) {
+      const text = document.getElementById(id).textContent.trim();
+      navigator.clipboard.writeText(text).then(() => {
+        const btns = document.querySelectorAll('.copy-btn');
+        btns.forEach(b => { if (b.onclick?.toString().includes(id)) { b.textContent = 'Copied!'; setTimeout(() => b.textContent = 'Copy', 1500); } });
+      });
+    }
+
+    function showError(msg) { const el = document.getElementById('error-msg'); el.textContent = msg; el.style.display = 'block'; }
+    function escape(str) { return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+    loadApp();
+  </script>
+</body>
+</html>

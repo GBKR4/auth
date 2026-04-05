@@ -1,7 +1,10 @@
 import * as tokenService from '../services/tokenService.js';
 import User from '../models/User.js';
 import Token from '../models/Token.js';
+import OAuthClient from '../models/OAuthClient.js';
+import OAuthAuthCode from '../models/OAuthAuthCode.js';
 import logger from '../utils/logger.js';
+import crypto from 'crypto';
 
 // ── Origin allowlist helper ───────────────────────────────────────────────────
 // Used to validate the `state` redirect parameter and prevent open-redirect attacks.
@@ -41,16 +44,16 @@ const authCookieOpts = () => ({
  * The frontend exchanges the code via POST /api/auth/google/exchange.
  */
 export const googleAuthCallback = async (req, res) => {
-  // Resolve redirect base — validated against the allowlist
+  // Parse the Passport state param — contains mode + relevant data
+  let stateData = { mode: 'direct' };
   let redirectBase = process.env.FRONTEND_URL || 'http://localhost:5173';
-  if (req.query.state) {
-    const decoded = decodeURIComponent(req.query.state);
-    if (isAllowedOrigin(decoded)) {
-      redirectBase = decoded;
-    } else {
-      logger.warn({ state: decoded, reqId: req.id }, 'Google OAuth: rejected unallowed state redirect');
-      // Fall back to the env default — do not honour the untrusted URL
+
+  try {
+    if (req.query.state) {
+      stateData = JSON.parse(decodeURIComponent(req.query.state));
     }
+  } catch {
+    logger.warn({ reqId: req.id }, 'Google OAuth: failed to parse state param');
   }
 
   try {
@@ -59,17 +62,58 @@ export const googleAuthCallback = async (req, res) => {
       return res.redirect(`${redirectBase}/login?error=auth_failed`);
     }
 
-    // Generate a one-time short-lived code — NO tokens ever touch the URL
-    const oauthCode = tokenService.generateVerificationToken();
-    const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
-    await Token.createOAuthCode(user.id, oauthCode, expiresAt);
-
     await User.updateLastLogin(user.id);
 
-    logger.info({ userId: user.id, reqId: req.id }, 'Google OAuth code issued');
+    // ── Mode: OAuth provider flow ─────────────────────────────────────────────
+    // Google was initiated from the OAuth authorize page (/oauth/authorize).
+    // Instead of setting cookies, issue an auth code and redirect to the client.
+    if (stateData.mode === 'oauth' && stateData.oauthParams) {
+      const oauthParams = new URLSearchParams(stateData.oauthParams);
+      const clientId    = oauthParams.get('client_id');
+      const redirectUri = oauthParams.get('redirect_uri');
+      const state       = oauthParams.get('state');
+      const codeChallenge = oauthParams.get('code_challenge');
 
-    // Redirect with only the short-lived code — frontend exchanges it
+      // Validate client + redirect_uri
+      const client = await OAuthClient.findByClientId(clientId);
+      if (!client || !OAuthClient.isValidRedirectUri(client, redirectUri)) {
+        logger.warn({ clientId, redirectUri, reqId: req.id }, 'Google OAuth flow: invalid client or redirect_uri');
+        return res.status(400).send('Invalid OAuth client configuration');
+      }
+
+      // Generate auth code
+      const rawCode  = crypto.randomBytes(32).toString('hex');
+      const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
+      await OAuthAuthCode.create({ rawCode, clientId, userId: user.id, redirectUri, codeChallenge, expiresAt });
+
+      logger.info({ userId: user.id, clientId, reqId: req.id }, 'Google OAuth: auth code issued for OAuth flow');
+
+      const callbackUrl = new URL(redirectUri);
+      callbackUrl.searchParams.set('code', rawCode);
+      callbackUrl.searchParams.set('state', state);
+      return res.redirect(callbackUrl.toString());
+    }
+
+    // ── Mode: Direct Google login (existing behaviour) ────────────────────────
+    // Resolve safe redirect base
+    if (stateData.mode === 'direct' && stateData.redirectUrl) {
+      if (isAllowedOrigin(stateData.redirectUrl)) {
+        redirectBase = stateData.redirectUrl;
+      }
+    } else if (req.query.state) {
+      // Legacy: state was just a URL string
+      const decoded = decodeURIComponent(req.query.state);
+      if (isAllowedOrigin(decoded)) redirectBase = decoded;
+    }
+
+    // Issue one-time OAuth code for exchange
+    const oauthCode = tokenService.generateVerificationToken();
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
+    await Token.createOAuthCode(user.id, oauthCode, expiresAt);
+
+    logger.info({ userId: user.id, reqId: req.id }, 'Google OAuth code issued (direct login)');
     return res.redirect(`${redirectBase}/auth/google/callback?code=${oauthCode}`);
+
   } catch (error) {
     logger.error({ error: error.message, reqId: req.id }, 'Google auth callback error');
     return res.redirect(`${redirectBase}/login?error=server_error`);

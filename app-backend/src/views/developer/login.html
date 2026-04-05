@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Developer Login — Auth Provider</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0f1117; --surface: #1a1d27; --border: #2a2d3e;
+      --primary: #6c63ff; --primary-hover: #5a52e0;
+      --text: #e2e8f0; --muted: #94a3b8; --danger: #ef4444;
+      --radius: 12px;
+    }
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg); color: var(--text);
+      min-height: 100vh; display: flex;
+      flex-direction: column; align-items: center; justify-content: center; padding: 1.5rem;
+    }
+    .card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 2.5rem 2rem;
+      width: 100%; max-width: 400px;
+    }
+    .logo { text-align: center; margin-bottom: 1.75rem; }
+    .logo-icon { font-size: 2rem; }
+    .logo-title { font-size: 1.3rem; font-weight: 700; margin-top: 0.4rem; }
+    .logo-sub { font-size: 0.85rem; color: var(--muted); margin-top: 0.25rem; }
+
+    .form-group { margin-bottom: 1.1rem; }
+    label { display: block; font-size: 0.82rem; font-weight: 600; margin-bottom: 0.35rem; }
+    input[type="email"], input[type="password"] {
+      width: 100%; background: var(--bg); border: 1px solid var(--border);
+      color: var(--text); padding: 0.65rem 0.9rem; border-radius: 8px;
+      font-size: 0.9rem; outline: none; transition: border 0.2s;
+    }
+    input:focus { border-color: var(--primary); }
+
+    .btn {
+      width: 100%; background: var(--primary); color: #fff; border: none;
+      padding: 0.72rem; border-radius: 8px; font-size: 0.92rem; font-weight: 600;
+      cursor: pointer; transition: background 0.2s; margin-top: 0.25rem;
+    }
+    .btn:hover:not(:disabled) { background: var(--primary-hover); }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    .error-box {
+      background: rgba(239,68,68,0.1); border: 1px solid var(--danger);
+      color: var(--danger); padding: 0.7rem 1rem; border-radius: 7px;
+      font-size: 0.84rem; margin-bottom: 1.1rem; display: none;
+    }
+    .info { text-align: center; font-size: 0.82rem; color: var(--muted); margin-top: 1.25rem; }
+    .spinner {
+      display: inline-block; width: 14px; height: 14px;
+      border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff;
+      border-radius: 50%; animation: spin 0.7s linear infinite;
+      margin-right: 6px; vertical-align: middle;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="card">
+    <div class="logo">
+      <div class="logo-icon">⚡</div>
+      <div class="logo-title">Developer Portal</div>
+      <div class="logo-sub">Sign in to manage your OAuth apps</div>
+    </div>
+
+    <div class="error-box" id="error-box"></div>
+
+    <form id="login-form" novalidate>
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input type="email" id="email" placeholder="you@example.com" autocomplete="email" required />
+      </div>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" placeholder="••••••••" autocomplete="current-password" required />
+      </div>
+      <button type="submit" class="btn" id="submit-btn">Sign in</button>
+    </form>
+
+    <div class="info">
+      Don't have an account? <a href="/developer/register" style="color:var(--primary)">Register here</a>
+    </div>
+  </div>
+
+  <script>
+    // If already logged in, go straight to dashboard
+    fetch('/api/developer/clients', { credentials: 'include' })
+      .then(r => { if (r.ok) window.location.href = '/developer'; })
+      .catch(() => {});
+
+    document.getElementById('login-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email    = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      const btn      = document.getElementById('submit-btn');
+
+      if (!email || !password) { showError('Please enter your email and password.'); return; }
+
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span>Signing in…';
+      hideError();
+
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ email, password }),
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+          showError(data.error || data.message || 'Login failed');
+          btn.disabled = false; btn.textContent = 'Sign in';
+          return;
+        }
+
+        // Check if user has developer or admin role
+        const role = data.user?.role;
+        if (role !== 'developer' && role !== 'admin') {
+          // Upgrade to developer automatically
+          await fetch('/api/developer/register', { method: 'POST', credentials: 'include' });
+        }
+
+        window.location.href = '/developer';
+      } catch {
+        showError('Network error. Is the server running?');
+        btn.disabled = false; btn.textContent = 'Sign in';
+      }
+    });
+
+    function showError(msg) { const el = document.getElementById('error-box'); el.textContent = msg; el.style.display = 'block'; }
+    function hideError() { document.getElementById('error-box').style.display = 'none'; }
+  </script>
+</body>
+</html>

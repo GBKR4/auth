@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Developer Portal</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0f1117; --surface: #1a1d27; --border: #2a2d3e;
+      --primary: #6c63ff; --primary-hover: #5a52e0;
+      --text: #e2e8f0; --muted: #94a3b8; --danger: #ef4444;
+      --success: #10b981; --radius: 10px;
+    }
+    body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+    /* NAV */
+    nav { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 2rem; display: flex; align-items: center; justify-content: space-between; height: 60px; }
+    .nav-brand { font-weight: 700; font-size: 1.1rem; color: var(--primary); letter-spacing: -0.5px; }
+    .nav-right { display: flex; align-items: center; gap: 1rem; }
+    .nav-user { font-size: 0.85rem; color: var(--muted); }
+    .btn-logout { background: transparent; border: 1px solid var(--border); color: var(--muted); padding: 0.35rem 0.85rem; border-radius: 6px; cursor: pointer; font-size: 0.82rem; transition: all 0.2s; }
+    .btn-logout:hover { border-color: var(--danger); color: var(--danger); }
+
+    /* MAIN */
+    main { max-width: 900px; margin: 0 auto; padding: 2.5rem 1.5rem; }
+    .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem; }
+    h1 { font-size: 1.6rem; font-weight: 700; }
+    h1 span { color: var(--primary); }
+
+    /* BUTTONS */
+    .btn-primary { background: var(--primary); color: #fff; border: none; padding: 0.6rem 1.2rem; border-radius: 8px; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: background 0.2s; text-decoration: none; display: inline-block; }
+    .btn-primary:hover { background: var(--primary-hover); }
+    .btn-danger { background: transparent; border: 1px solid var(--danger); color: var(--danger); padding: 0.4rem 0.9rem; border-radius: 6px; font-size: 0.82rem; cursor: pointer; transition: all 0.2s; }
+    .btn-danger:hover { background: var(--danger); color: #fff; }
+    .btn-secondary { background: transparent; border: 1px solid var(--border); color: var(--text); padding: 0.4rem 0.9rem; border-radius: 6px; font-size: 0.82rem; cursor: pointer; transition: all 0.2s; text-decoration: none; display: inline-block; }
+    .btn-secondary:hover { border-color: var(--primary); color: var(--primary); }
+
+    /* EMPTY STATE */
+    .empty { text-align: center; padding: 4rem 2rem; background: var(--surface); border: 1px dashed var(--border); border-radius: var(--radius); }
+    .empty-icon { font-size: 2.5rem; margin-bottom: 1rem; }
+    .empty h2 { font-size: 1.2rem; margin-bottom: 0.5rem; }
+    .empty p { color: var(--muted); font-size: 0.9rem; margin-bottom: 1.5rem; }
+
+    /* APP CARDS */
+    .apps-grid { display: grid; gap: 1rem; }
+    .app-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem 1.5rem; display: flex; align-items: center; justify-content: space-between; transition: border-color 0.2s; }
+    .app-card:hover { border-color: var(--primary); }
+    .app-info h3 { font-size: 1rem; font-weight: 600; margin-bottom: 0.3rem; }
+    .app-meta { display: flex; gap: 1rem; align-items: center; }
+    .client-id { font-family: monospace; font-size: 0.82rem; background: rgba(108,99,255,0.1); color: var(--primary); padding: 0.2rem 0.5rem; border-radius: 4px; }
+    .created { font-size: 0.8rem; color: var(--muted); }
+    .app-actions { display: flex; gap: 0.5rem; align-items: center; }
+
+    /* LOADING */
+    #loading { text-align: center; padding: 3rem; color: var(--muted); }
+    #error-msg { background: rgba(239,68,68,0.1); border: 1px solid var(--danger); color: var(--danger); padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; display: none; }
+
+    /* SECRET MODAL */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 100; display: none; }
+    .modal-overlay.active { display: flex; }
+    .modal { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 2rem; max-width: 520px; width: 90%; }
+    .modal h2 { font-size: 1.1rem; margin-bottom: 0.5rem; }
+    .modal .warning { background: rgba(245,158,11,0.1); border: 1px solid #f59e0b; color: #f59e0b; padding: 0.75rem 1rem; border-radius: 6px; font-size: 0.85rem; margin: 1rem 0; }
+    .secret-field { background: #0f1117; border: 1px solid var(--border); border-radius: 6px; padding: 0.75rem 1rem; font-family: monospace; font-size: 0.85rem; word-break: break-all; margin: 0.5rem 0; position: relative; }
+    .copy-btn { position: absolute; right: 0.5rem; top: 50%; transform: translateY(-50%); background: var(--primary); border: none; color: #fff; padding: 0.25rem 0.6rem; border-radius: 4px; font-size: 0.75rem; cursor: pointer; }
+    .label { font-size: 0.8rem; color: var(--muted); margin-top: 0.75rem; }
+  </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <nav>
+    <div class="nav-brand">⚡ Auth Provider — Developer Portal</div>
+    <div class="nav-right">
+      <span class="nav-user" id="nav-user"></span>
+      <button class="btn-logout" onclick="logout()">Logout</button>
+    </div>
+  </nav>
+
+  <main>
+    <div class="page-header">
+      <h1>Your <span>OAuth Apps</span></h1>
+      <a href="/developer/new" class="btn-primary">+ Register New App</a>
+    </div>
+
+    <div id="error-msg"></div>
+    <div id="loading">Loading your apps…</div>
+    <div id="apps-container" style="display:none"></div>
+  </main>
+
+  <!-- Secret Modal (shown after successful registration redirect) -->
+  <div class="modal-overlay" id="secret-modal">
+    <div class="modal">
+      <h2>🎉 App Registered Successfully</h2>
+      <div class="warning">⚠️ Save your Client Secret now — it will <strong>never be shown again</strong>.</div>
+      <div class="label">Client ID</div>
+      <div class="secret-field" id="modal-client-id" style="position:relative">
+        <button class="copy-btn" onclick="copyField('modal-client-id')">Copy</button>
+      </div>
+      <div class="label">Client Secret</div>
+      <div class="secret-field" id="modal-client-secret" style="position:relative">
+        <button class="copy-btn" onclick="copyField('modal-client-secret')">Copy</button>
+      </div>
+      <br>
+      <button class="btn-primary" onclick="closeSecretModal()" style="width:100%">Done — I've saved my credentials</button>
+    </div>
+  </div>
+
+  <script>
+    const API = '/api/developer';
+
+    // Show new client secret if passed via sessionStorage (from new-client page)
+    const pendingSecret = sessionStorage.getItem('new_client_credentials');
+    if (pendingSecret) {
+      const creds = JSON.parse(pendingSecret);
+      sessionStorage.removeItem('new_client_credentials');
+      document.getElementById('modal-client-id').childNodes[0].textContent = creds.client_id;
+      document.getElementById('modal-client-secret').childNodes[0].textContent = creds.client_secret;
+      document.getElementById('secret-modal').classList.add('active');
+    }
+
+    function closeSecretModal() {
+      document.getElementById('secret-modal').classList.remove('active');
+    }
+
+    function copyField(id) {
+      const el = document.getElementById(id);
+      const text = el.childNodes[0]?.textContent?.trim() || el.textContent.trim();
+      navigator.clipboard.writeText(text).then(() => {
+        const btn = el.querySelector('.copy-btn');
+        btn.textContent = 'Copied!';
+        setTimeout(() => btn.textContent = 'Copy', 1500);
+      });
+    }
+
+    async function loadApps() {
+      try {
+        const res = await fetch(API + '/clients', { credentials: 'include' });
+        if (res.status === 401) { window.location.href = '/developer/login'; return; }
+        const data = await res.json();
+
+        // Show user name in nav
+        const userRes = await fetch('/api/user/me', { credentials: 'include' });
+        if (userRes.ok) {
+          const u = await userRes.json();
+          document.getElementById('nav-user').textContent = u.user?.email || '';
+        }
+
+        document.getElementById('loading').style.display = 'none';
+        const container = document.getElementById('apps-container');
+        container.style.display = 'block';
+
+        if (!data.clients || data.clients.length === 0) {
+          container.innerHTML = `
+            <div class="empty">
+              <div class="empty-icon">📦</div>
+              <h2>No apps registered yet</h2>
+              <p>Register your first OAuth app to get a client_id and client_secret.</p>
+              <a href="/developer/new" class="btn-primary">Register New App</a>
+            </div>`;
+          return;
+        }
+
+        container.innerHTML = `<div class="apps-grid">${data.clients.map(app => `
+          <div class="app-card">
+            <div class="app-info">
+              <h3>${escape(app.name)}</h3>
+              <div class="app-meta">
+                <span class="client-id">${app.client_id}</span>
+                <span class="created">Created ${new Date(app.created_at).toLocaleDateString()}</span>
+              </div>
+            </div>
+            <div class="app-actions">
+              <a href="/developer/clients/${app.id}" class="btn-secondary">Manage</a>
+              <button class="btn-danger" onclick="deleteApp(${app.id}, '${escape(app.name)}')">Delete</button>
+            </div>
+          </div>`).join('')}</div>`;
+      } catch (err) {
+        document.getElementById('loading').style.display = 'none';
+        showError('Failed to load apps. Please refresh.');
+      }
+    }
+
+    async function deleteApp(id, name) {
+      if (!confirm(`Delete "${name}"? This will immediately invalidate all issued tokens.`)) return;
+      try {
+        const res = await fetch(`${API}/clients/${id}`, { method: 'DELETE', credentials: 'include' });
+        if (res.ok) { loadApps(); }
+        else { const d = await res.json(); showError(d.error || 'Failed to delete app'); }
+      } catch { showError('Failed to delete app'); }
+    }
+
+    async function logout() {
+      await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+      window.location.href = '/developer/login';
+    }
+
+    function showError(msg) {
+      const el = document.getElementById('error-msg');
+      el.textContent = msg;
+      el.style.display = 'block';
+    }
+
+    function escape(str) {
+      return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    loadApps();
+  </script>
+</body>
+</html>

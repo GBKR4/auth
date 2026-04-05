@@ -3,7 +3,7 @@ import passport from '../config/passport.js';
 import { googleAuthCallback, googleAuthFailure, googleAuthExchange } from '../controllers/googleAuthController.js';
 import { oauthExchangeLimiter } from '../middlewares/rateLimiter.js';
 
-// ── Allowed-origin guard ──────────────────────────────────────────────────────
+// ── Allowed-origin guard ───────────────────────────────────────────────────────
 const getAllowedOrigins = () => {
   const raw = process.env.ALLOWED_ORIGINS || '';
   const list = raw.split(',').map((o) => o.trim()).filter(Boolean);
@@ -19,29 +19,48 @@ const isSafeRedirectUrl = (url) => {
     return false;
   }
 };
-// ─────────────────────────────────────────────────────────────────────────────
 
 const router = Router();
 
-// Initiates Google OAuth flow
+/**
+ * Initiates Google OAuth flow.
+ *
+ * Two modes:
+ * 1. Direct login (existing): ?redirectUrl=<frontend>
+ *    After auth: sets cookies + redirects to frontend.
+ *
+ * 2. OAuth provider flow (new): ?oauthState=<encoded OAuth params>
+ *    After auth: generates auth code + redirects to client redirect_uri.
+ *    oauthState contains: client_id, redirect_uri, state, code_challenge.
+ */
 router.get(
   '/google',
   (req, res, next) => {
-    // `redirectUrl` tells us where to send the user after auth.
-    // Validate it before encoding it into the state param.
-    const requestedRedirect = req.query.redirectUrl;
-    const state = (requestedRedirect && isSafeRedirectUrl(requestedRedirect))
-      ? requestedRedirect
-      : (process.env.FRONTEND_URL || 'http://localhost:5173');
+    let passportState;
+
+    if (req.query.oauthState) {
+      // OAuth provider flow
+      passportState = JSON.stringify({
+        mode: 'oauth',
+        oauthParams: req.query.oauthState,
+      });
+    } else {
+      // Direct login flow
+      const requestedRedirect = req.query.redirectUrl;
+      const redirectUrl = (requestedRedirect && isSafeRedirectUrl(requestedRedirect))
+        ? requestedRedirect
+        : (process.env.FRONTEND_URL || 'http://localhost:5173');
+      passportState = JSON.stringify({ mode: 'direct', redirectUrl });
+    }
 
     passport.authenticate('google', {
       scope: ['profile', 'email'],
-      state: encodeURIComponent(state),
+      state: encodeURIComponent(passportState),
     })(req, res, next);
   }
 );
 
-// Google OAuth callback route
+// Google OAuth callback
 router.get(
   '/google/callback',
   passport.authenticate('google', {
@@ -51,11 +70,10 @@ router.get(
   googleAuthCallback
 );
 
-// Exchange a one-time OAuth code for JWT tokens
-// The frontend calls this after receiving the code in the redirect query param.
+// Exchange one-time code for tokens (direct Google login only)
 router.post('/google/exchange', oauthExchangeLimiter, googleAuthExchange);
 
-// Google auth failure route
+// Failure handler
 router.get('/google/failure', googleAuthFailure);
 
 export default router;
