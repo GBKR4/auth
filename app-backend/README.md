@@ -1,61 +1,98 @@
-# 🔐 Full-Stack Authentication App
+# 🔐 Auth Provider — OAuth 2.0 Server
 
-A production-ready full-stack authentication system with **dual authentication** (Local + Google OAuth 2.0).
-
-- **Backend** — Node.js, Express 5, PostgreSQL, JWT (`app-backend/` → port **3000**)
-- **Frontend** — React 18, Vite, Tailwind CSS, React Router 6 (`app-frontend/` → port **5173**)
+A production-ready **OAuth 2.0 Authorization Server** and authentication provider built with Node.js, Express 5, and PostgreSQL. It exposes a full OAuth 2.0 PKCE flow for third-party applications, along with a **Developer Portal** for registering and managing OAuth clients.
 
 [![Node.js](https://img.shields.io/badge/Node.js-v18+-green.svg)](https://nodejs.org/)
 [![Express](https://img.shields.io/badge/Express-5.2.1-blue.svg)](https://expressjs.com/)
-[![React](https://img.shields.io/badge/React-18.3.1-61DAFB.svg)](https://react.dev/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16+-blue.svg)](https://www.postgresql.org/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 ---
 
+## ✨ What's New — UI Overhaul
+
+All server-rendered HTML pages now use a **premium dark glassmorphism design** powered by [Lucide Icons](https://lucide.dev) (the same icon set as `react-icons/lu`) via CDN:
+
+- 🌑 Deep `#060818` background with animated radial gradient orbs
+- 🪟 `backdrop-filter: blur(20px)` glassmorphism cards with glowing top-line accents
+- 🔮 Purple gradient buttons (`#6c63ff → #8b5cf6`) with drop-shadow glow
+- 🔡 **Inter** font (Google Fonts) · consistent `--border`, `--primary`, `--muted` CSS variables
+- 👁️ Password show/hide toggle (`eye` / `eye-off`) on every password field
+- 📩 Contextual input prefix icons (`mail`, `lock`, `at-sign`, `link`, `key-round`, `user`, …)
+- ✅ Styled success / error alert boxes with `check-circle-2` / `alert-circle` icons
+- 🚀 Icon-enriched buttons: `log-in`, `send`, `rocket`, `trash-2`, `refresh-cw`, `copy`, `check`
+
+> **Icon library:** [Lucide](https://lucide.dev) — MIT licensed, framework-agnostic SVG icon set (`<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js">`)
+
+---
+
 ## 🚀 Features
 
-### 🔑 Dual Authentication System
-- ✅ **Local Authentication** (Email/Password)
-- ✅ **Google OAuth 2.0** (Sign in with Google)
-- ✅ Smart email linking between accounts
+### 🔑 Authentication
+- ✅ **Local Authentication** — Email + Password with Bcrypt hashing
+- ✅ **Google OAuth 2.0** — Sign in with Google (Passport.js strategy)
+- ✅ Smart email linking — Google accounts detected on password login
 - ✅ Auto-verification for OAuth users
-- ✅ Google accounts detected on email/password login — user is guided to Google sign-in
+
+### 🛡️ OAuth 2.0 Authorization Server (PKCE)
+- ✅ Authorization Code flow with **PKCE** (`code_challenge` / `code_verifier`)
+- ✅ Third-party apps can request scopes and receive short-lived authorization codes
+- ✅ Token exchange endpoint — code → access token + refresh token
+- ✅ `client_id` / `client_secret` based app authentication
+- ✅ Per-client `redirect_uri` allowlist enforcement
+- ✅ Consent / login screen served at `/oauth/authorize`
+
+### 🧑‍💻 Developer Portal
+- ✅ Register OAuth applications (name + redirect URIs)
+- ✅ View `client_id` and one-time `client_secret` on registration
+- ✅ Rotate client secret
+- ✅ Delete registered applications
+- ✅ Beautiful glassmorphism UI at `/developer`
 
 ### 🛡️ Security
-- ✅ JWT Access Token (15 min) + Refresh Token (7 days)
-- ✅ Silent token refresh interceptor (Axios)
-- ✅ Bcrypt password hashing
+- ✅ JWT Access Token (15 min) + Refresh Token (7 days) in `httpOnly` cookies
+- ✅ Bcrypt password hashing with adaptive cost factor
 - ✅ Helmet.js security headers
-- ✅ Rate limiting (login, register, password reset)
-- ✅ Input validation & sanitization (express-validator)
+- ✅ Rate limiting on login, register, and password reset endpoints
+- ✅ Input validation & sanitization (`express-validator`)
 - ✅ SQL injection protection (parameterized queries)
 - ✅ Token revocation on logout
-- ✅ Role-based access control (user / admin)
+- ✅ Role-based access control (`user` / `developer` / `admin`)
 
 ### 📧 Email System
 - ✅ Email verification on registration
 - ✅ Resend verification email
-- ✅ Password reset via email
+- ✅ Password reset via email (time-limited token)
 - ✅ Gmail SMTP integration
 
-### 🖥️ Frontend Pages
-- ✅ Login (email/password + Google button)
-- ✅ Register (with client-side validation)
-- ✅ Email Verification (auto-verifies from link)
-- ✅ Forgot Password / Reset Password
-- ✅ Dashboard (user info + quick actions)
-- ✅ Profile (edit name, change password, delete account)
-- ✅ Admin Users table (searchable, admin-only)
+---
+
+## 🖥️ Pages & Routes
+
+### OAuth Flow (served by the auth server)
+| URL | Description |
+|-----|-------------|
+| `/oauth/authorize` | OAuth login/consent screen shown to the end-user |
+| `/oauth/register` | Create new account (end-user registration) |
+| `/forgot-password` | Request a password reset link |
+| `/reset-password/:token` | Set a new password using a reset token |
+
+### Developer Portal
+| URL | Description |
+|-----|-------------|
+| `/developer/login` | Developer sign-in |
+| `/developer` | Dashboard — list all registered OAuth apps |
+| `/developer/new` | Register a new OAuth application |
+| `/developer/clients/:id` | Manage a specific app (credentials, URIs, delete, rotate secret) |
 
 ---
 
 ## 📋 Prerequisites
 
-- **Node.js** v18 or higher
+- **Node.js** v18+
 - **PostgreSQL** v16 (or v12+)
 - **Gmail account** with App Password enabled
-- **Google Cloud Console** project (for OAuth)
+- **Google Cloud Console** project (for Google OAuth)
 
 ---
 
@@ -67,15 +104,14 @@ git clone <your-repo-url>
 cd auth
 ```
 
-### 2. Install Dependencies (both apps)
+### 2. Install Backend Dependencies
 ```bash
 cd app-backend && npm install
-cd ../app-frontend && npm install
 ```
 
 ### 3. Create PostgreSQL Database
 
-**Windows (PostgreSQL 16):**
+**Windows (PowerShell):**
 ```powershell
 $env:PGPASSWORD = "your_postgres_password"
 & "C:\Program Files\PostgreSQL\16\bin\psql.exe" -U postgres -c "CREATE DATABASE auth_db;"
@@ -92,12 +128,13 @@ psql -U postgres -d auth_db -f app-backend/src/database/google-auth-migration.sq
 
 ### 4. Configure Environment Variables
 
-Create `app-backend/.env` (copy from `app-backend/.env.example`):
+Copy `app-backend/.env.example` → `app-backend/.env` and fill in:
 
 ```env
 # Server
 NODE_ENV=development
 PORT=3000
+AUTH_SERVER_URL=http://localhost:3000
 
 # Database
 DB_HOST=localhost
@@ -106,7 +143,7 @@ DB_USER=postgres
 DB_PASSWORD=your_postgres_password
 DB_NAME=auth_db
 
-# JWT — use long random strings (64+ chars)
+# JWT — use 64+ char random strings
 JWT_ACCESS_SECRET=replace-with-a-long-random-secret
 JWT_REFRESH_SECRET=replace-with-a-different-long-random-secret
 JWT_ACCESS_EXPIRY=15m
@@ -120,82 +157,41 @@ EMAIL_USER=your-email@gmail.com
 EMAIL_PASSWORD=your-16-char-app-password
 EMAIL_FROM=noreply@yourapp.com
 
-# Frontend URL — must match Vite dev server port
-# Used for email verification and password reset links
+# Frontend / client app URL
 FRONTEND_URL=http://localhost:5173
+CLIENT_URL=http://localhost:5173
+
+# CORS — comma-separated allowed origins
+ALLOWED_ORIGINS=http://localhost:3000,http://localhost:5173
 
 # Google OAuth 2.0
-# Authorized redirect URI in Google Console: http://localhost:3000/api/auth/google/callback
+# Authorized redirect URI: http://localhost:3000/api/auth/google/callback
 GOOGLE_CLIENT_ID=your-google-client-id
 GOOGLE_CLIENT_SECRET=your-google-client-secret
 GOOGLE_CALLBACK_URL=http://localhost:3000/api/auth/google/callback
 ```
 
-### 5. Setup Gmail App Password
+### 5. Gmail App Password
 
 1. Go to [Google Account Settings](https://myaccount.google.com/)
 2. **Security → 2-Step Verification → App passwords**
-3. Create an app password for "Mail"
-4. Paste the 16-character password into `EMAIL_PASSWORD` in `.env`
+3. Create a password for "Mail" and paste it into `EMAIL_PASSWORD`
 
-### 6. Setup Google OAuth 2.0
+### 6. Google OAuth 2.0
 
 1. Go to [Google Cloud Console](https://console.cloud.google.com/)
-2. Create or select a project
-3. **APIs & Services → Credentials → Create Credentials → OAuth 2.0 Client ID**
-4. Application type: **Web application**
-5. **Authorized JavaScript origins:**
-   ```
-   http://localhost:5173
-   ```
-6. **Authorized redirect URIs:**
-   ```
-   http://localhost:3000/api/auth/google/callback
-   ```
-7. Copy the **Client ID** and **Client Secret** into `.env`
+2. **APIs & Services → Credentials → Create OAuth 2.0 Client ID**
+3. Application type: **Web application**
+4. **Authorized JavaScript origins:** `http://localhost:3000`
+5. **Authorized redirect URIs:** `http://localhost:3000/api/auth/google/callback`
+6. Copy Client ID and Secret → `.env`
 
-### 7. Start Both Servers
-
-**Terminal 1 — Backend:**
+### 7. Start the Server
 ```bash
 cd app-backend
 npm run dev
 # → http://localhost:3000
 ```
-
-**Terminal 2 — Frontend:**
-```bash
-cd app-frontend
-npm run dev
-# → http://localhost:5173
-```
-
-Open **http://localhost:5173** in your browser.
-
----
-
-## 🚀 Usage
-
-### Start Development
-```bash
-# Backend (port 3000)
-cd app-backend && npm run dev
-
-# Frontend (port 5173)
-cd app-frontend && npm run dev
-```
-
-### Start Production Backend
-```bash
-cd app-backend && npm start
-```
-
-### Run Tests
-```bash
-cd app-backend && npm test
-```
-
-Server will be available at: `http://localhost:3000`
 
 ---
 
@@ -203,41 +199,56 @@ Server will be available at: `http://localhost:3000`
 
 Base URL: `http://localhost:3000/api`
 
-### Authentication Routes (`/auth`)
+### Authentication (`/auth`)
 
-#### Local Authentication
-| Method | Endpoint | Description | Auth Required |
-|--------|----------|-------------|---------------|
+#### Local Auth
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
 | POST | `/auth/register` | Register new user | ❌ |
 | POST | `/auth/login` | Login with email/password | ❌ |
 | POST | `/auth/logout` | Logout & revoke refresh token | ❌ |
 | POST | `/auth/refresh` | Get new access token | ❌ |
-| GET | `/auth/verify/:token` | Verify email address | ❌ |
+| GET  | `/auth/verify/:token` | Verify email address | ❌ |
 | POST | `/auth/resend-verification` | Resend verification email | ❌ |
 
 #### Password Management
-| Method | Endpoint | Description | Auth Required |
-|--------|----------|-------------|---------------|
-| POST | `/auth/forgot-password` | Request password reset email | ❌ |
-| POST | `/auth/reset-password` | Reset password with token | ❌ |
-| POST | `/auth/validate-reset-token` | Validate password reset token | ❌ |
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/auth/forgot-password` | Send password reset email |
+| POST | `/auth/reset-password` | Reset password with token |
+| POST | `/auth/validate-reset-token` | Validate reset token (used by UI) |
 
-#### Google OAuth 2.0
+#### Google OAuth
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | GET | `/auth/google` | Initiate Google OAuth flow |
-| GET | `/auth/google/callback` | Google callback → redirects to frontend |
-| GET | `/auth/google/failure` | OAuth failure redirect |
+| GET | `/auth/google/callback` | Google callback → sets httpOnly cookies |
 
-### User Management Routes (`/user`)
+### User Management (`/user`)
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| GET | `/user/me` | Get current user info | ✅ JWT |
+| GET | `/user/profile` | Get full profile | ✅ JWT |
+| PUT | `/user/profile` | Update name | ✅ JWT |
+| PUT | `/user/change-password` | Change password | ✅ JWT |
+| DELETE | `/user/delete-account` | Delete own account | ✅ JWT |
+| GET | `/user/users` | List all users | ✅ Admin |
 
-| Method | Endpoint | Description | Auth | Role |
-|--------|----------|-------------|------|------|
-| GET | `/user/profile` | Get current user profile | ✅ JWT | User/Admin |
-| PUT | `/user/profile` | Update name | ✅ JWT | User/Admin |
-| PUT | `/user/change-password` | Change password | ✅ JWT | User/Admin |
-| DELETE | `/user/delete-account` | Delete own account | ✅ JWT | User/Admin |
-| GET | `/user/users` | List all users | ✅ JWT | Admin only |
+### OAuth 2.0 Server (`/oauth`)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET  | `/oauth/authorize` | Show login/consent screen |
+| POST | `/oauth/login` | Process the OAuth login |
+| POST | `/oauth/token` | Exchange auth code for tokens |
+| POST | `/oauth/introspect` | Inspect an access token |
+
+### Developer API (`/developer`)
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| GET  | `/developer/clients` | List registered apps | ✅ Session |
+| POST | `/developer/clients` | Register new app | ✅ Session |
+| DELETE | `/developer/clients/:id` | Delete an app | ✅ Session |
+| POST | `/developer/clients/:id/rotate` | Rotate client secret | ✅ Session |
 
 ---
 
@@ -270,100 +281,102 @@ Content-Type: application/json
 POST http://localhost:3000/api/auth/login
 Content-Type: application/json
 
-{
-  "email": "user@example.com",
-  "password": "SecurePass123!"
-}
+{ "email": "user@example.com", "password": "SecurePass123!" }
 ```
 
-**Response `200` — tokens are set as `httpOnly` cookies, not returned in the body:**
-```json
-{
-  "message": "Login successful",
-  "user": { "id": 1, "email": "user@example.com", "username": "johndoe", "role": "user" }
-}
-```
+> Tokens are set as `httpOnly` cookies — never in the response body.
 
-> ⚠️ Accounts created via Google OAuth have no password. Attempting email/password login on them returns: `"This account was created with Google. Please sign in with Google."`
-
-### Refresh Access Token
+### Register an OAuth App (Developer API)
 ```bash
-# No body needed — the refreshToken httpOnly cookie is sent automatically
-POST http://localhost:3000/api/auth/refresh
-```
-
-### Get Profile (Protected)
-```bash
-# accessToken httpOnly cookie is sent automatically by the browser
-GET http://localhost:3000/api/user/profile
-```
-
-**Response `200`:**
-```json
-{
-  "id": 1,
-  "email": "user@example.com",
-  "username": "johndoe",
-  "first_name": "John",
-  "last_name": "Doe",
-  "role": "user",
-  "is_verified": true,
-  "created_at": "2026-03-09T10:00:00.000Z"
-}
-```
-
-### Forgot Password
-```bash
-POST http://localhost:3000/api/auth/forgot-password
+POST http://localhost:3000/api/developer/clients
 Content-Type: application/json
 
-{ "email": "user@example.com" }
+{
+  "name": "CollabDocs",
+  "redirect_uris": ["http://localhost:5173/auth/callback"]
+}
 ```
 
-### Reset Password
+**Response `201`:**
+```json
+{
+  "client_id": "abc123...",
+  "client_secret": "sk_live_...",
+  "name": "CollabDocs",
+  "redirect_uris": ["http://localhost:5173/auth/callback"]
+}
+```
+
+> ⚠️ The `client_secret` is only shown **once** at registration. Save it immediately.
+
+### OAuth 2.0 PKCE Authorization Flow (for client apps)
+
+**Step 1 — Redirect user to the auth server:**
+```
+GET http://localhost:3000/oauth/authorize
+  ?response_type=code
+  &client_id=<your-client-id>
+  &redirect_uri=http://localhost:5173/auth/callback
+  &state=<random-state>
+  &code_challenge=<base64url(SHA256(code_verifier))>
+  &code_challenge_method=S256
+  &app_name=CollabDocs
+```
+
+**Step 2 — Exchange code for tokens:**
 ```bash
-POST http://localhost:3000/api/auth/reset-password
+POST http://localhost:3000/oauth/token
 Content-Type: application/json
 
-{ "token": "abc123...", "newPassword": "NewPass123!" }
+{
+  "grant_type": "authorization_code",
+  "code": "<auth-code>",
+  "redirect_uri": "http://localhost:5173/auth/callback",
+  "client_id": "<your-client-id>",
+  "client_secret": "<your-client-secret>",
+  "code_verifier": "<original-code-verifier>"
+}
 ```
 
 ---
 
 ## 🗄️ Database Schema
 
-### Users Table
+### `users`
 ```sql
 id              SERIAL PRIMARY KEY
 email           VARCHAR(255) UNIQUE NOT NULL
 username        VARCHAR(100) UNIQUE NOT NULL
-password_hash   VARCHAR(255)        -- NULL for Google OAuth users
+password_hash   VARCHAR(255)              -- NULL for Google OAuth users
 first_name      VARCHAR(100)
 last_name       VARCHAR(100)
-google_id       VARCHAR(255) UNIQUE -- Set for Google OAuth users
-auth_provider   VARCHAR(50) DEFAULT 'local'  -- 'local' | 'google'
-profile_picture TEXT                -- Google profile photo URL
+google_id       VARCHAR(255) UNIQUE       -- Set for Google OAuth users
+auth_provider   VARCHAR(50) DEFAULT 'local'
+profile_picture TEXT
 is_verified     BOOLEAN DEFAULT FALSE
 is_active       BOOLEAN DEFAULT TRUE
-role            VARCHAR(50) DEFAULT 'user'   -- 'user' | 'admin'
+role            VARCHAR(50) DEFAULT 'user' -- 'user' | 'developer' | 'admin'
 created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 updated_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 last_login      TIMESTAMP
 ```
 
-**Indexes:** `email`, `username`, `google_id`, `auth_provider`
-
 ### Other Tables
-- **refresh_tokens** — Stored & rotated JWT refresh tokens
-- **verification_tokens** — Email verification + password reset tokens
-- **sessions** — Session tracking with IP & user agent
-- **login_attempts** — Login attempt logging for security auditing
+| Table | Purpose |
+|-------|---------|
+| `refresh_tokens` | Stored & rotated JWT refresh tokens |
+| `verification_tokens` | Email verification + password reset tokens |
+| `oauth_clients` | Registered OAuth applications (`client_id`, `client_secret`, `redirect_uris`) |
+| `oauth_codes` | Short-lived PKCE authorization codes |
+| `oauth_tokens` | Issued OAuth access & refresh tokens |
+| `sessions` | Session tracking with IP & user agent |
+| `login_attempts` | Security audit logging |
 
 > Schema files: `app-backend/src/database/schema.sql` + `google-auth-migration.sql`
 
 ---
 
-## 🔒 Security Features
+## 🔒 Security
 
 ### Rate Limiting
 | Endpoint | Limit | Window |
@@ -371,7 +384,6 @@ last_login      TIMESTAMP
 | Login | 20 requests | 15 min |
 | Register | 10 requests | 15 min |
 | Password Reset | 5 requests | 15 min |
-| Resend Verification | 5 requests | 15 min |
 | General API | 100 requests | 15 min |
 
 ### Password Requirements
@@ -379,16 +391,8 @@ last_login      TIMESTAMP
 - At least 1 uppercase, 1 lowercase, 1 number, 1 special character
 
 ### JWT Tokens
-- **Access Token:** 15-minute expiry — stored in `httpOnly` cookie (not accessible by JS)
-- **Refresh Token:** 7-day expiry — stored in `httpOnly` cookie, rotated on every use
-- Silent refresh via Axios response interceptor (parallel requests are queued and retried)
-
-### Other Measures
-- Helmet.js security headers
-- CORS restricted to `FRONTEND_URL`
-- bcrypt with adaptive cost factor
-- SQL injection prevention via parameterized queries
-- Input validation with `express-validator`
+- **Access Token** — 15-min expiry, `httpOnly` cookie
+- **Refresh Token** — 7-day expiry, `httpOnly` cookie, rotated on every use
 
 ---
 
@@ -396,154 +400,134 @@ last_login      TIMESTAMP
 
 ```
 auth/
-├── k6/                              # k6 performance & load test scripts
-│   ├── config.js                    # Shared BASE_URL, credentials, cookie helpers
-│   ├── smoke.test.js                # Smoke test — 1 VU, full endpoint coverage
-│   ├── load.test.js                 # Load test — ramping VUs, 3 scenarios
-│   └── stress.test.js               # Stress test — spike to 100 VUs + recovery
+├── .gitignore
 │
-├── app-backend/                     # Node.js + Express API
-│   ├── server.js                    # Entry point
-│   ├── package.json
-│   ├── .env                         # Secrets & config (not committed)
-│   ├── .env.example                 # Template for .env
-│   ├── servers/
-│   │   ├── start-server.bat
-│   │   └── start-server.ps1
-│   ├── src/
-│   │   ├── app.js                   # Express app setup
-│   │   ├── config/
-│   │   │   ├── database.js          # PostgreSQL connection pool
-│   │   │   ├── email.js             # Nodemailer config
-│   │   │   ├── jwt.js               # JWT helpers
-│   │   │   └── passport.js          # Google OAuth strategy
-│   │   ├── controllers/
-│   │   │   ├── authController.js    # Register, login, logout, refresh, verify
-│   │   │   ├── googleAuthController.js  # Google OAuth callback → sets httpOnly cookies
-│   │   │   ├── passwordController.js    # Forgot/reset password
-│   │   │   └── userController.js    # Profile, change-password, admin
-│   │   ├── models/
-│   │   │   ├── User.js
-│   │   │   ├── Token.js
-│   │   │   └── Session.js
-│   │   ├── routes/
-│   │   │   ├── index.js
-│   │   │   ├── auth.js
-│   │   │   ├── googleAuth.js
-│   │   │   └── user.js
-│   │   ├── services/
-│   │   │   ├── authService.js
-│   │   │   ├── emailService.js
-│   │   │   ├── hashService.js
-│   │   │   └── tokenService.js
-│   │   ├── middlewares/
-│   │   │   ├── auth.js              # JWT verification middleware
-│   │   │   ├── validation.js        # Request body validation
-│   │   │   ├── rateLimiter.js
-│   │   │   └── errorHandler.js
-│   │   ├── templates/
-│   │   │   ├── verificationEmail.html
-│   │   │   ├── resetPassword.html
-│   │   │   └── welcomeEmail.html
-│   │   ├── utils/
-│   │   │   ├── generators.js
-│   │   │   ├── logger.js            # Winston logger
-│   │   │   └── validators.js
-│   │   └── database/
-│   │       ├── init.js
-│   │       ├── schema.sql           # Main table definitions
-│   │       ├── google-auth-migration.sql  # Adds google_id, auth_provider, profile_picture
-│   │       └── seed.sql
-│   └── tests/
-│       ├── test-complete.js
-│       └── test-email.js
-│
-└── app-frontend/                    # React 18 + Vite 5
-    ├── index.html                   # Tailwind CSS via CDN
-    ├── vite.config.js               # Proxy /api → http://localhost:3000
+└── app-backend/                         # Node.js + Express OAuth Server
+    ├── server.js                        # Entry point
     ├── package.json
-    └── src/
-        ├── main.jsx
-        ├── App.jsx                  # Router — all routes
-        ├── index.css
-        ├── api/
-        │   ├── axios.js             # Axios instance + silent refresh interceptor
-        │   ├── auth.js              # Auth API calls
-        │   └── user.js              # User API calls
-        ├── context/
-        │   └── AuthContext.jsx      # Global auth state (login, logout, loginWithTokens)
-        ├── components/
-        │   ├── Navbar.jsx
-        │   ├── ProtectedRoute.jsx
-        │   ├── AdminRoute.jsx
-        │   └── LoadingSpinner.jsx
-        └── pages/
-            ├── LoginPage.jsx
-            ├── RegisterPage.jsx
-            ├── VerifyEmailPage.jsx
-            ├── ResendVerificationPage.jsx
-            ├── ForgotPasswordPage.jsx
-            ├── ResetPasswordPage.jsx
-            ├── GoogleCallbackPage.jsx   # Reads tokens from URL → localStorage
-            ├── DashboardPage.jsx
-            ├── ProfilePage.jsx
-            └── AdminUsersPage.jsx
+    ├── .env                             # Secrets (not committed)
+    ├── .env.example                     # Template
+    ├── ecosystem.config.cjs             # PM2 config
+    │
+    ├── src/
+    │   ├── app.js                       # Express app setup (middleware, routes)
+    │   ├── config/
+    │   │   ├── database.js              # PostgreSQL connection pool
+    │   │   ├── email.js                 # Nodemailer config
+    │   │   ├── jwt.js                   # JWT helpers
+    │   │   └── passport.js              # Google OAuth strategy
+    │   │
+    │   ├── controllers/
+    │   │   ├── authController.js        # Register, login, logout, refresh, verify
+    │   │   ├── googleAuthController.js  # Google OAuth callback
+    │   │   ├── oauthController.js       # OAuth 2.0 PKCE authorization server logic
+    │   │   ├── developerController.js   # OAuth client CRUD + secret rotation
+    │   │   ├── passwordController.js    # Forgot/reset password
+    │   │   └── userController.js        # Profile, change-password, admin
+    │   │
+    │   ├── routes/
+    │   │   ├── index.js
+    │   │   ├── auth.js
+    │   │   ├── googleAuth.js
+    │   │   ├── oauth.js                 # /oauth/* routes
+    │   │   ├── developer.js             # /developer/* routes
+    │   │   └── user.js
+    │   │
+    │   ├── views/                       # Server-rendered HTML (glassmorphism UI)
+    │   │   ├── oauth/
+    │   │   │   ├── login.html           # OAuth login/consent screen
+    │   │   │   └── register.html        # End-user registration
+    │   │   ├── developer/
+    │   │   │   ├── login.html           # Developer portal login
+    │   │   │   ├── dashboard.html       # List registered OAuth apps
+    │   │   │   ├── new-client.html      # Register new app form
+    │   │   │   └── client-detail.html   # App detail — credentials, URIs, delete
+    │   │   ├── forgot-password.html
+    │   │   └── reset-password.html
+    │   │
+    │   ├── models/
+    │   │   ├── User.js
+    │   │   ├── Token.js
+    │   │   └── Session.js
+    │   │
+    │   ├── services/
+    │   │   ├── authService.js
+    │   │   ├── emailService.js
+    │   │   ├── hashService.js
+    │   │   └── tokenService.js
+    │   │
+    │   ├── middlewares/
+    │   │   ├── auth.js                  # JWT verification
+    │   │   ├── validation.js            # express-validator rules
+    │   │   ├── rateLimiter.js
+    │   │   └── errorHandler.js
+    │   │
+    │   ├── templates/                   # HTML email templates
+    │   │   ├── verificationEmail.html
+    │   │   ├── resetPassword.html
+    │   │   └── welcomeEmail.html
+    │   │
+    │   ├── utils/
+    │   │   ├── generators.js
+    │   │   ├── logger.js               # Pino structured logging
+    │   │   └── validators.js
+    │   │
+    │   └── database/
+    │       ├── init.js
+    │       ├── schema.sql              # Main table definitions
+    │       ├── google-auth-migration.sql
+    │       └── seed.sql
+    │
+    └── tests/
+        ├── api.test.js                 # Jest integration tests
+        ├── test-complete.js
+        └── test-email.js
 ```
+
+---
+
+## 🎨 UI Design System
+
+All server-rendered pages (`src/views/`) share a consistent design language:
+
+| Token | Value |
+|-------|-------|
+| Background | `#060818` |
+| Card surface | `rgba(255,255,255,0.03)` + `backdrop-filter: blur(20px)` |
+| Primary | `#6c63ff` → gradient `#8b5cf6` |
+| Primary light | `#9d97ff` |
+| Border | `rgba(255,255,255,0.08)` |
+| Focus ring | `rgba(108,99,255,0.55)` border + `rgba(108,99,255,0.1)` shadow |
+| Danger | `#f87171` |
+| Success | `#34d399` |
+| Font | [Inter](https://fonts.google.com/specimen/Inter) (Google Fonts) |
+| Icons | [Lucide](https://lucide.dev) via CDN (`unpkg.com/lucide@latest`) |
+
+**Lucide icons used across the UI:**
+
+`shield-check` · `code-2` · `key-round` · `lock-keyhole` · `user-plus` ·
+`mail` · `lock` · `eye` · `eye-off` · `at-sign` · `log-in` · `log-out` ·
+`send` · `arrow-left` · `plus` · `plus-circle` · `rocket` · `trash-2` ·
+`refresh-cw` · `copy` · `check` · `alert-circle` · `check-circle-2` ·
+`mail-check` · `triangle-alert` · `link` · `link-2` · `link-2-off` ·
+`app-window` · `calendar` · `hash` · `info` · `settings-2` · `circle-check-big`
 
 ---
 
 ## 🧪 Testing
 
-### Integration / Functional Tests
+### Unit / Integration Tests (Jest)
+```bash
+cd app-backend
+npm test
+```
+
+### Manual Functional Tests
 ```bash
 cd app-backend
 node tests/test-complete.js
 node tests/test-email.js
 ```
-
-### k6 Load & Performance Tests
-
-Requires [k6](https://k6.io/docs/get-started/installation/) to be installed.
-
-```bash
-# Install k6 (Windows)
-winget install GrafanaLabs.k6
-
-# Or macOS
-brew install k6
-```
-
-#### Smoke Test — verify all endpoints work (1 VU, 1 iteration)
-```bash
-k6 run k6/smoke.test.js
-```
-
-#### Load Test — realistic multi-scenario traffic (0–20 VUs over ~3 min)
-> Pre-requisite: `TEST_USER` and `ADMIN_USER` must exist in the DB and be email-verified.
-```bash
-k6 run k6/load.test.js
-
-# Override credentials and target URL
-k6 run --env BASE_URL=http://localhost:3000 \
-        --env TEST_EMAIL=loadtest@example.com \
-        --env TEST_PASSWORD=LoadTest@1234 \
-        --env ADMIN_EMAIL=admin@example.com \
-        --env ADMIN_PASSWORD=Admin@1234 \
-        k6/load.test.js
-```
-
-#### Stress Test — find the breaking point (ramps to 100 VUs, includes spike)
-```bash
-k6 run k6/stress.test.js
-```
-
-| Script | VUs | Duration | Purpose |
-|--------|-----|----------|---------|
-| `smoke.test.js` | 1 | ~3 s | Functional correctness |
-| `load.test.js` | 0–20 | ~3 min | Normal traffic simulation |
-| `stress.test.js` | 0–100 | ~5.5 min | Breaking point + recovery |
-
-**k6 test coverage:** health check, register, login (verified/unverified), logout, token refresh, profile read/update, password change, admin user list, forgot/reset password, input validation, rate-limit handling.
 
 ---
 
@@ -554,58 +538,45 @@ k6 run k6/stress.test.js
 $env:PGPASSWORD = "your_password"
 & "C:\Program Files\PostgreSQL\16\bin\psql.exe" -U postgres -c "CREATE DATABASE auth_db;"
 & "C:\Program Files\PostgreSQL\16\bin\psql.exe" -U postgres -d auth_db -f "src/database/schema.sql"
-& "C:\Program Files\PostgreSQL\16\bin\psql.exe" -U postgres -d auth_db -f "src/database/google-auth-migration.sql"
 ```
 
 ### `Error 400: redirect_uri_mismatch`
-1. Go to [Google Cloud Console](https://console.cloud.google.com/) → **Credentials** → Edit your OAuth client
-2. Under **Authorized redirect URIs**, add exactly:
-   ```
-   http://localhost:3000/api/auth/google/callback
-   ```
-3. Save and wait ~30 seconds before retrying
-
-### `"This account was created with Google. Please sign in with Google."`
-This is expected — accounts created via Google OAuth have no password. Use the **Continue with Google** button on the login page.
+1. Go to [Google Cloud Console](https://console.cloud.google.com/) → Credentials → Edit OAuth client
+2. Add `http://localhost:3000/api/auth/google/callback` to **Authorized redirect URIs**
+3. Save and wait ~30 seconds
 
 ### Email not sending
-- Confirm 2-Step Verification is enabled on your Gmail account
-- Use a **16-character App Password** (not your account password)
+- Confirm 2-Step Verification is enabled on Gmail
+- Use a **16-character App Password** (not your real password)
 - Check `EMAIL_USER` and `EMAIL_PASSWORD` in `.env`
 
 ### Port already in use
 ```powershell
-# Find and kill the process on port 3000
 netstat -ano | Select-String ":3000"
 Stop-Process -Id <PID> -Force
-
-# Or kill all node processes
-Get-Process -Name node | Stop-Process -Force
 ```
 
-### Frontend shows blank page / 404 on refresh
-Vite dev server handles SPA routing automatically. If deploying, configure your web server to serve `index.html` for all routes.
+### Lucide icons not showing after update
+The icons load from unpkg CDN. If you see missing icons on a specific page, do a **hard refresh** (`Ctrl+Shift+R`) to bypass browser cache.
 
 ---
 
 ## 🚀 Production Deployment Checklist
 
 - [ ] `NODE_ENV=production`
-- [ ] Strong random `JWT_ACCESS_SECRET` and `JWT_REFRESH_SECRET` (64+ chars)
+- [ ] Strong `JWT_ACCESS_SECRET` and `JWT_REFRESH_SECRET` (64+ random chars)
 - [ ] PostgreSQL with SSL and a dedicated user
-- [ ] Production email service (SendGrid, AWS SES, etc.)
-- [ ] Update `FRONTEND_URL`, `GOOGLE_CALLBACK_URL` to production domains
-- [ ] Add production domain to Google Console authorized origins + redirect URIs
+- [ ] Production email service (SendGrid, AWS SES, Resend, etc.)
+- [ ] Update `AUTH_SERVER_URL`, `FRONTEND_URL`, `GOOGLE_CALLBACK_URL` to production domains
+- [ ] Update Google Console authorized origins + redirect URIs
 - [ ] HTTPS on both frontend and backend
-- [ ] Run frontend build: `cd app-frontend && npm run build` — deploy `dist/` to CDN or static host
-- [ ] Use PM2 or Docker for backend process management
-- [ ] Configure Nginx reverse proxy
+- [ ] Use PM2 or Docker (`ecosystem.config.cjs` included)
+- [ ] Configure Nginx reverse proxy for `/api` and `/oauth` routes
 
 ---
 
 ## 📦 Key Dependencies
 
-### Backend (`app-backend`)
 | Package | Version | Purpose |
 |---------|---------|---------|
 | express | 5.2.1 | Web framework |
@@ -613,20 +584,13 @@ Vite dev server handles SPA routing automatically. If deploying, configure your 
 | bcrypt | 6.0.0 | Password hashing |
 | jsonwebtoken | 9.0.3 | JWT generation/verification |
 | passport-google-oauth20 | 2.0.0 | Google OAuth strategy |
-| nodemailer | 7.0.12 | Email delivery |
+| nodemailer | 8.0.4 | Email delivery |
 | helmet | 8.1.0 | Security headers |
 | express-rate-limit | 8.2.1 | Rate limiting |
 | express-validator | 7.3.1 | Input validation |
-| pino | 10.3.1 | Structured JSON logging (pino-pretty in dev) |
-
-### Frontend (`app-frontend`)
-| Package | Version | Purpose |
-|---------|---------|---------|
-| react | 18.3.1 | UI library |
-| react-router-dom | 6.22 | Client-side routing |
-| axios | — | HTTP client + refresh interceptor |
-| vite | 5.1 | Build tool + dev server |
-| tailwindcss | CDN | Utility-first CSS |
+| cookie-parser | 1.4.7 | Cookie parsing |
+| pino / pino-pretty | 10.3.1 | Structured JSON logging |
+| nodemon | 3.1.11 | Dev auto-restart |
 
 ---
 
