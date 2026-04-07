@@ -4,117 +4,236 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>App Detail — Developer Portal</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
     :root {
-      --bg: #0f1117; --surface: #1a1d27; --border: #2a2d3e;
-      --primary: #6c63ff; --primary-hover: #5a52e0;
-      --text: #e2e8f0; --muted: #94a3b8; --danger: #ef4444;
-      --warning: #f59e0b; --radius: 10px;
+      --bg: #060818;
+      --surface: rgba(255,255,255,0.03);
+      --nav: rgba(6,8,24,0.8);
+      --border: rgba(255,255,255,0.08);
+      --primary: #6c63ff;
+      --primary-light: #9d97ff;
+      --text: #f1f5f9;
+      --text-dim: #94a3b8;
+      --muted: #475569;
+      --danger: #f87171;
+      --danger-bg: rgba(248,113,113,0.08);
+      --danger-border: rgba(248,113,113,0.22);
+      --warning: #fbbf24;
+      --warning-bg: rgba(251,191,36,0.08);
+      --warning-border: rgba(251,191,36,0.2);
+      --radius: 12px;
     }
+
     body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
-    nav { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 2rem; display: flex; align-items: center; height: 60px; gap: 1rem; }
-    .nav-brand { font-weight: 700; font-size: 1.1rem; color: var(--primary); text-decoration: none; }
-    .nav-sep { color: var(--border); }
-    .nav-page { color: var(--muted); font-size: 0.9rem; }
-    main { max-width: 700px; margin: 2.5rem auto; padding: 0 1.5rem; }
-    .back-link { color: var(--muted); font-size: 0.85rem; text-decoration: none; display: inline-flex; align-items: center; gap: 0.4rem; margin-bottom: 1.5rem; transition: color 0.2s; }
-    .back-link:hover { color: var(--primary); }
-    h1 { font-size: 1.5rem; font-weight: 700; margin-bottom: 0.3rem; }
-    .app-name { color: var(--primary); }
+    body::before {
+      content: '';
+      position: fixed;
+      width: 500px; height: 500px;
+      background: radial-gradient(circle at center, rgba(108,99,255,0.08) 0%, transparent 65%);
+      top: -100px; right: -80px;
+      pointer-events: none;
+    }
 
-    .section { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; margin-bottom: 1.25rem; }
-    .section-title { font-size: 0.8rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 1rem; }
-    .field-row { margin-bottom: 1rem; }
-    .field-label { font-size: 0.8rem; color: var(--muted); margin-bottom: 0.3rem; }
-    .field-value { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 0.6rem 0.9rem; font-family: monospace; font-size: 0.85rem; display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; word-break: break-all; }
-    .copy-btn { background: var(--primary); border: none; color: #fff; padding: 0.25rem 0.6rem; border-radius: 4px; font-size: 0.75rem; cursor: pointer; flex-shrink: 0; transition: background 0.2s; }
-    .copy-btn:hover { background: var(--primary-hover); }
+    nav {
+      background: var(--nav);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 1.75rem;
+      display: flex; align-items: center;
+      height: 60px; gap: 0.65rem;
+      position: sticky; top: 0; z-index: 50;
+    }
+    .nav-brand { display: flex; align-items: center; gap: 0.5rem; font-weight: 700; font-size: 0.9rem; color: var(--text); text-decoration: none; letter-spacing: -0.02em; }
+    .nav-brand-icon { width: 28px; height: 28px; background: rgba(108,99,255,0.14); border: 1px solid rgba(108,99,255,0.2); border-radius: 7px; display: flex; align-items: center; justify-content: center; color: var(--primary-light); }
+    .nav-brand-icon svg { width: 14px; height: 14px; stroke-width: 2; }
+    .nav-sep { color: rgba(255,255,255,0.15); }
+    .nav-page { color: var(--text-dim); font-size: 0.84rem; }
 
-    .uri-tag { display: inline-block; background: rgba(108,99,255,0.1); color: var(--primary); border: 1px solid rgba(108,99,255,0.3); padding: 0.25rem 0.65rem; border-radius: 20px; font-size: 0.82rem; font-family: monospace; margin: 0.2rem 0.2rem 0 0; }
+    main { max-width: 700px; margin: 2.25rem auto; padding: 0 1.5rem; }
+
+    .back-link { display: inline-flex; align-items: center; gap: 0.35rem; color: var(--text-dim); font-size: 0.82rem; text-decoration: none; transition: color 0.18s; font-weight: 500; margin-bottom: 1.5rem; }
+    .back-link svg { width: 13px; height: 13px; stroke-width: 2.5; }
+    .back-link:hover { color: var(--primary-light); }
+
+    .page-title { font-size: 1.45rem; font-weight: 700; letter-spacing: -0.03em; margin-bottom: 0.28rem; }
+    .page-title span { color: var(--primary-light); }
+    .page-subtitle { color: var(--muted); font-size: 0.84rem; margin-bottom: 1.75rem; }
+
+    /* Section cards */
+    .section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.5rem;
+      margin-bottom: 0.85rem;
+      transition: border-color 0.18s;
+    }
+    .section-head { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 1.1rem; }
+    .section-icon { width: 30px; height: 30px; background: rgba(108,99,255,0.1); border: 1px solid rgba(108,99,255,0.18); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--primary-light); flex-shrink: 0; }
+    .section-icon svg { width: 14px; height: 14px; stroke-width: 2; }
+    .section-title { font-size: 0.72rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+
+    .field-row { margin-bottom: 0.9rem; }
+    .field-row:last-child { margin-bottom: 0; }
+    .field-label { font-size: 0.74rem; color: var(--muted); margin-bottom: 0.3rem; display: flex; align-items: center; gap: 0.3rem; }
+    .field-label svg { width: 11px; height: 11px; stroke-width: 2; }
+    .field-value {
+      display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;
+      background: rgba(255,255,255,0.03); border: 1px solid var(--border);
+      border-radius: 8px; padding: 0.6rem 0.85rem;
+      font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.81rem;
+      word-break: break-all; line-height: 1.5;
+    }
+    .field-value span { flex: 1; }
+    .copy-btn {
+      display: inline-flex; align-items: center; gap: 0.25rem;
+      background: rgba(108,99,255,0.12); border: 1px solid rgba(108,99,255,0.2);
+      color: var(--primary-light); padding: 0.22rem 0.55rem;
+      border-radius: 5px; font-size: 0.71rem; font-weight: 600;
+      cursor: pointer; flex-shrink: 0; transition: all 0.18s;
+    }
+    .copy-btn svg { width: 11px; height: 11px; stroke-width: 2.5; }
+    .copy-btn:hover { background: rgba(108,99,255,0.22); }
+
+    .uri-tags { display: flex; flex-wrap: wrap; gap: 0.45rem; }
+    .uri-tag { display: inline-flex; align-items: center; gap: 0.3rem; background: rgba(108,99,255,0.08); color: var(--primary-light); border: 1px solid rgba(108,99,255,0.18); padding: 0.28rem 0.65rem; border-radius: 20px; font-size: 0.78rem; font-family: 'SF Mono', 'Fira Code', monospace; }
+    .uri-tag svg { width: 11px; height: 11px; stroke-width: 2; }
+
+    .info-row { display: flex; justify-content: space-between; align-items: center; padding: 0.55rem 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .info-row:last-child { border-bottom: none; padding-bottom: 0; }
+    .info-key { display: flex; align-items: center; gap: 0.35rem; font-size: 0.82rem; color: var(--muted); }
+    .info-key svg { width: 13px; height: 13px; stroke-width: 2; }
+    .info-val { font-size: 0.82rem; color: var(--text-dim); }
 
     /* Buttons */
-    .btn-primary { background: var(--primary); color: #fff; border: none; padding: 0.6rem 1.2rem; border-radius: 8px; font-size: 0.88rem; font-weight: 600; cursor: pointer; transition: background 0.2s; }
-    .btn-primary:hover { background: var(--primary-hover); }
-    .btn-danger { background: transparent; border: 1px solid var(--danger); color: var(--danger); padding: 0.6rem 1.2rem; border-radius: 8px; font-size: 0.88rem; cursor: pointer; transition: all 0.2s; }
-    .btn-danger:hover { background: var(--danger); color: #fff; }
-    .row { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
+    .btn-primary { display: inline-flex; align-items: center; gap: 0.4rem; background: linear-gradient(135deg, #6c63ff, #8b5cf6); color: #fff; border: none; padding: 0.58rem 1.15rem; border-radius: var(--radius); font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.18s; box-shadow: 0 4px 12px rgba(108,99,255,0.28); font-family: inherit; }
+    .btn-primary svg { width: 14px; height: 14px; stroke-width: 2.5; }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(108,99,255,0.38); }
+    .btn-neutral { display: inline-flex; align-items: center; gap: 0.4rem; background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: var(--text-dim); padding: 0.58rem 1.15rem; border-radius: var(--radius); font-size: 0.85rem; cursor: pointer; transition: all 0.18s; font-family: inherit; }
+    .btn-neutral svg { width: 14px; height: 14px; stroke-width: 2; }
+    .btn-neutral:hover { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.15); }
+    .btn-danger { display: inline-flex; align-items: center; gap: 0.4rem; background: transparent; border: 1px solid var(--danger-border); color: var(--danger); padding: 0.58rem 1.15rem; border-radius: var(--radius); font-size: 0.85rem; cursor: pointer; transition: all 0.18s; font-family: inherit; }
+    .btn-danger svg { width: 14px; height: 14px; stroke-width: 2; }
+    .btn-danger:hover { background: var(--danger-bg); border-color: var(--danger); }
 
-    /* Warning banner */
-    .warning-box { background: rgba(245,158,11,0.1); border: 1px solid var(--warning); color: var(--warning); padding: 0.75rem 1rem; border-radius: 7px; font-size: 0.85rem; margin-bottom: 1rem; }
+    /* Danger section */
+    .danger-section { border-color: rgba(248,113,113,0.18); }
+    .danger-section .section-icon { background: rgba(248,113,113,0.08); border-color: rgba(248,113,113,0.18); color: var(--danger); }
+    .danger-section .section-title { color: var(--danger); }
+    .danger-section p { font-size: 0.84rem; color: var(--text-dim); margin-bottom: 1.1rem; line-height: 1.6; }
 
-    /* Secret modal */
-    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.75); display: none; align-items: center; justify-content: center; z-index: 100; }
-    .modal-overlay.active { display: flex; }
-    .modal { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 2rem; max-width: 520px; width: 90%; }
-    .modal h2 { margin-bottom: 0.5rem; }
-    .modal-warning { background: rgba(245,158,11,0.1); border: 1px solid var(--warning); color: var(--warning); padding: 0.75rem 1rem; border-radius: 6px; font-size: 0.84rem; margin: 1rem 0; }
-    .modal-field { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 0.75rem 1rem; font-family: monospace; font-size: 0.85rem; margin: 0.4rem 0 0.75rem; word-break: break-all; position: relative; }
-    .modal-label { font-size: 0.8rem; color: var(--muted); }
-    .modal-copy { position: absolute; right: 0.5rem; top: 50%; transform: translateY(-50%); background: var(--primary); border: none; color: #fff; padding: 0.2rem 0.55rem; border-radius: 4px; font-size: 0.74rem; cursor: pointer; }
-    .modal-done { background: var(--primary); color: #fff; border: none; padding: 0.65rem; border-radius: 8px; font-size: 0.9rem; font-weight: 600; cursor: pointer; width: 100%; margin-top: 0.5rem; }
-
-    #loading { color: var(--muted); padding: 3rem; text-align: center; }
-    #error-msg { background: rgba(239,68,68,0.1); border: 1px solid var(--danger); color: var(--danger); padding: 0.75rem 1rem; border-radius: 7px; font-size: 0.85rem; margin-bottom: 1rem; display: none; }
+    /* Loading */
+    #loading { display: flex; flex-direction: column; align-items: center; gap: 0.85rem; padding: 4rem; color: var(--text-dim); font-size: 0.875rem; }
+    .loading-ring { width: 26px; height: 26px; border: 2.5px solid rgba(108,99,255,0.18); border-top-color: var(--primary); border-radius: 50%; animation: spin 0.7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    #error-msg { display: flex; align-items: flex-start; gap: 0.5rem; background: var(--danger-bg); border: 1px solid var(--danger-border); color: var(--danger); padding: 0.65rem 0.85rem; border-radius: var(--radius); font-size: 0.82rem; margin-bottom: 1rem; }
+    #error-msg svg { width: 14px; height: 14px; flex-shrink: 0; margin-top: 1px; stroke-width: 2.5; }
     #content { display: none; }
+
+    /* Modal */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(6px); display: none; align-items: center; justify-content: center; z-index: 100; padding: 1rem; }
+    .modal-overlay.active { display: flex; }
+    .modal { background: #0c0d1a; border: 1px solid rgba(108,99,255,0.18); border-radius: 18px; padding: 2rem; max-width: 480px; width: 100%; box-shadow: 0 30px 80px rgba(0,0,0,0.6); }
+    .modal-head { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.4rem; }
+    .modal-head-icon { width: 34px; height: 34px; background: rgba(251,191,36,0.1); border: 1px solid rgba(251,191,36,0.2); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--warning); }
+    .modal-head-icon svg { width: 16px; height: 16px; stroke-width: 2; }
+    .modal h2 { font-size: 1rem; font-weight: 700; letter-spacing: -0.02em; }
+    .modal-warning { display: flex; align-items: flex-start; gap: 0.45rem; background: var(--warning-bg); border: 1px solid var(--warning-border); color: var(--warning); padding: 0.65rem 0.85rem; border-radius: 9px; font-size: 0.8rem; margin: 0.9rem 0; line-height: 1.5; }
+    .modal-warning svg { width: 14px; height: 14px; flex-shrink: 0; margin-top: 1px; stroke-width: 2.5; }
+    .modal-label { font-size: 0.71rem; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.3rem; margin-top: 0.7rem; }
+    .modal-field { background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 7px; padding: 0.62rem 0.85rem; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.79rem; margin-bottom: 0.35rem; word-break: break-all; position: relative; padding-right: 5rem; line-height: 1.5; }
+    .modal-copy { position: absolute; right: 0.45rem; top: 50%; transform: translateY(-50%); display: inline-flex; align-items: center; gap: 0.25rem; background: rgba(108,99,255,0.12); border: 1px solid rgba(108,99,255,0.2); color: var(--primary-light); padding: 0.2rem 0.5rem; border-radius: 5px; font-size: 0.7rem; font-weight: 600; cursor: pointer; transition: all 0.18s; }
+    .modal-copy svg { width: 10px; height: 10px; stroke-width: 2.5; }
+    .modal-copy:hover { background: rgba(108,99,255,0.2); }
+    .modal-done { width: 100%; margin-top: 1.1rem; background: linear-gradient(135deg, #6c63ff, #8b5cf6); color: #fff; border: none; padding: 0.68rem; border-radius: var(--radius); font-size: 0.875rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.4rem; box-shadow: 0 4px 12px rgba(108,99,255,0.28); transition: all 0.18s; font-family: inherit; }
+    .modal-done svg { width: 15px; height: 15px; stroke-width: 2.5; }
+    .modal-done:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(108,99,255,0.38); }
   </style>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
   <nav>
-    <a href="/developer" class="nav-brand">⚡ Developer Portal</a>
+    <a href="/developer" class="nav-brand">
+      <div class="nav-brand-icon"><i data-lucide="code-2"></i></div>
+      Developer Portal
+    </a>
     <span class="nav-sep">/</span>
     <span class="nav-page" id="nav-app-name">App Detail</span>
   </nav>
 
   <main>
-    <a href="/developer" class="back-link">← Back to Apps</a>
-    <div id="loading">Loading app details…</div>
-    <div id="error-msg"></div>
+    <a href="/developer" class="back-link"><i data-lucide="arrow-left"></i> Back to Apps</a>
+
+    <div id="loading"><div class="loading-ring"></div><span>Loading app details…</span></div>
+    <div id="error-msg" style="display:none"><i data-lucide="alert-circle"></i><span id="error-text"></span></div>
 
     <div id="content">
-      <h1>App: <span class="app-name" id="app-name-title"></span></h1>
-      <p style="color:var(--muted);font-size:0.85rem;margin:0.3rem 0 1.5rem">Manage your OAuth app credentials and settings.</p>
+      <div class="page-title">App: <span id="app-name-title"></span></div>
+      <p class="page-subtitle">Manage your OAuth app credentials and settings.</p>
 
       <!-- Credentials -->
       <div class="section">
-        <div class="section-title">Credentials</div>
+        <div class="section-head">
+          <div class="section-icon"><i data-lucide="key"></i></div>
+          <div class="section-title">Credentials</div>
+        </div>
         <div class="field-row">
-          <div class="field-label">Client ID</div>
+          <div class="field-label"><i data-lucide="fingerprint"></i> Client ID</div>
           <div class="field-value">
             <span id="client-id-val"></span>
-            <button class="copy-btn" onclick="copyText('client-id-val')">Copy</button>
+            <button class="copy-btn" onclick="copyText('client-id-val')"><i data-lucide="copy"></i> Copy</button>
           </div>
         </div>
         <div class="field-row">
-          <div class="field-label">Client Secret</div>
-          <div class="field-value" style="color:var(--muted);font-style:italic;">
+          <div class="field-label"><i data-lucide="shield"></i> Client Secret</div>
+          <div class="field-value" style="color:var(--muted)">
             <span>••••••••••••••••••••••••••••••••</span>
-            <button class="copy-btn" onclick="rotateSecret()" style="background:#2a2d3e;color:var(--text);">Rotate</button>
+            <button class="copy-btn" onclick="rotateSecret()" style="background:rgba(255,255,255,0.05);border-color:var(--border);color:var(--text-dim)">
+              <i data-lucide="refresh-cw"></i> Rotate
+            </button>
           </div>
         </div>
       </div>
 
       <!-- Redirect URIs -->
       <div class="section">
-        <div class="section-title">Allowed Redirect URIs</div>
-        <div id="uris-container"></div>
+        <div class="section-head">
+          <div class="section-icon"><i data-lucide="link-2"></i></div>
+          <div class="section-title">Allowed Redirect URIs</div>
+        </div>
+        <div class="uri-tags" id="uris-container"></div>
       </div>
 
-      <!-- Created -->
+      <!-- Info -->
       <div class="section">
-        <div class="section-title">Info</div>
-        <div class="field-row">
-          <div class="field-label">Created</div>
-          <div style="font-size:0.9rem;color:var(--muted)" id="created-at"></div>
+        <div class="section-head">
+          <div class="section-icon"><i data-lucide="info"></i></div>
+          <div class="section-title">App Info</div>
+        </div>
+        <div class="info-row">
+          <span class="info-key"><i data-lucide="hash"></i> App ID</span>
+          <span class="info-val" id="app-id-val" style="font-family:monospace;font-size:0.8rem"></span>
+        </div>
+        <div class="info-row">
+          <span class="info-key"><i data-lucide="calendar"></i> Created</span>
+          <span class="info-val" id="created-at"></span>
         </div>
       </div>
 
       <!-- Danger zone -->
-      <div class="section" style="border-color:rgba(239,68,68,0.3)">
-        <div class="section-title" style="color:var(--danger)">Danger Zone</div>
-        <p style="font-size:0.85rem;color:var(--muted);margin-bottom:1rem">Deleting this app immediately revokes all associated tokens. This cannot be undone.</p>
-        <button class="btn-danger" onclick="deleteApp()">Delete This App</button>
+      <div class="section danger-section">
+        <div class="section-head">
+          <div class="section-icon"><i data-lucide="triangle-alert"></i></div>
+          <div class="section-title">Danger Zone</div>
+        </div>
+        <p>Deleting this app immediately revokes all associated tokens. This cannot be undone.</p>
+        <button class="btn-danger" onclick="deleteApp()">
+          <i data-lucide="trash-2"></i>
+          Delete This App
+        </button>
       </div>
     </div>
   </main>
@@ -122,24 +241,36 @@
   <!-- Rotate secret modal -->
   <div class="modal-overlay" id="secret-modal">
     <div class="modal">
-      <h2>🔄 Secret Rotated</h2>
-      <div class="modal-warning">⚠️ Save your new Client Secret now — it will <strong>never be shown again</strong>. Your old secret is now invalid.</div>
+      <div class="modal-head">
+        <div class="modal-head-icon"><i data-lucide="refresh-cw"></i></div>
+        <h2>Secret Rotated</h2>
+      </div>
+      <div class="modal-warning">
+        <i data-lucide="triangle-alert"></i>
+        Save your new Client Secret now — it will <strong>never be shown again</strong>. Your old secret is now invalid.
+      </div>
       <div class="modal-label">New Client Secret</div>
       <div class="modal-field" id="new-secret-val">
-        <button class="modal-copy" onclick="copyModalSecret()">Copy</button>
+        <button class="modal-copy" onclick="copyModalSecret()"><i data-lucide="copy"></i> Copy</button>
       </div>
-      <button class="modal-done" onclick="closeModal()">Done — I've saved my new secret</button>
+      <button class="modal-done" onclick="closeModal()">
+        <i data-lucide="circle-check-big"></i>
+        Done — I've saved my new secret
+      </button>
     </div>
   </div>
 
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
   <script>
-    const API = '/api/developer';
+    lucide.createIcons();
+
+    const API   = '/api/developer';
     const appId = window.location.pathname.split('/').pop();
     let appData = null;
 
     async function loadApp() {
       try {
-        const res = await fetch(`${API}/clients`, { credentials: 'include' });
+        const res  = await fetch(`${API}/clients`, { credentials: 'include' });
         if (res.status === 401) { window.location.href = '/developer/login'; return; }
         const data = await res.json();
         appData = data.clients?.find(c => String(c.id) === String(appId));
@@ -149,26 +280,29 @@
     }
 
     function renderApp(app) {
-      document.getElementById('loading').style.display = 'none';
-      document.getElementById('content').style.display = 'block';
-      document.getElementById('nav-app-name').textContent = app.name;
+      document.getElementById('loading').style.display  = 'none';
+      document.getElementById('content').style.display  = 'block';
+      document.getElementById('nav-app-name').textContent   = app.name;
       document.getElementById('app-name-title').textContent = app.name;
-      document.getElementById('client-id-val').textContent = app.client_id;
-      document.getElementById('created-at').textContent = new Date(app.created_at).toLocaleString();
-      document.getElementById('uris-container').innerHTML = app.redirect_uris.map(u => `<span class="uri-tag">${escape(u)}</span>`).join('');
+      document.getElementById('client-id-val').textContent  = app.client_id;
+      document.getElementById('app-id-val').textContent     = app.id;
+      document.getElementById('created-at').textContent     = new Date(app.created_at).toLocaleString();
+      document.getElementById('uris-container').innerHTML   = app.redirect_uris.map(u =>
+        `<span class="uri-tag"><i data-lucide="link"></i>${escape(u)}</span>`
+      ).join('');
+      lucide.createIcons();
     }
 
     async function rotateSecret() {
       if (!confirm('Rotate the client secret? Your old secret will immediately stop working.')) return;
       try {
-        const res = await fetch(`${API}/clients/${appId}/rotate`, { method: 'POST', credentials: 'include' });
+        const res  = await fetch(`${API}/clients/${appId}/rotate`, { method: 'POST', credentials: 'include' });
         const data = await res.json();
         if (!res.ok) { showError(data.error || 'Failed to rotate secret'); return; }
-        const modal = document.getElementById('secret-modal');
         const field = document.getElementById('new-secret-val');
         field.childNodes[0]?.remove?.();
         field.insertAdjacentText('afterbegin', data.client_secret);
-        modal.classList.add('active');
+        document.getElementById('secret-modal').classList.add('active');
       } catch { showError('Failed to rotate secret'); }
     }
 
@@ -176,8 +310,9 @@
       const text = document.getElementById('new-secret-val').childNodes[0]?.textContent?.trim();
       navigator.clipboard.writeText(text).then(() => {
         const btn = document.querySelector('.modal-copy');
-        btn.textContent = 'Copied!';
-        setTimeout(() => btn.textContent = 'Copy', 1500);
+        btn.innerHTML = '<i data-lucide="check"></i> Copied';
+        lucide.createIcons();
+        setTimeout(() => { btn.innerHTML = '<i data-lucide="copy"></i> Copy'; lucide.createIcons(); }, 1500);
       });
     }
 
@@ -194,11 +329,14 @@
       const text = document.getElementById(id).textContent.trim();
       navigator.clipboard.writeText(text).then(() => {
         const btns = document.querySelectorAll('.copy-btn');
-        btns.forEach(b => { if (b.onclick?.toString().includes(id)) { b.textContent = 'Copied!'; setTimeout(() => b.textContent = 'Copy', 1500); } });
+        btns.forEach(b => { if (b.getAttribute('onclick')?.includes(id)) { b.innerHTML = '<i data-lucide="check"></i> Copied'; lucide.createIcons(); setTimeout(() => { b.innerHTML = '<i data-lucide="copy"></i> Copy'; lucide.createIcons(); }, 1500); } });
       });
     }
 
-    function showError(msg) { const el = document.getElementById('error-msg'); el.textContent = msg; el.style.display = 'block'; }
+    function showError(msg) {
+      document.getElementById('error-text').textContent = msg;
+      document.getElementById('error-msg').style.display = 'flex';
+    }
     function escape(str) { return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
     loadApp();

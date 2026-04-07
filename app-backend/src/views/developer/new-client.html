@@ -4,106 +4,244 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Register New App — Developer Portal</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
     :root {
-      --bg: #0f1117; --surface: #1a1d27; --border: #2a2d3e;
-      --primary: #6c63ff; --primary-hover: #5a52e0;
-      --text: #e2e8f0; --muted: #94a3b8; --danger: #ef4444;
-      --radius: 10px;
+      --bg: #060818;
+      --surface: rgba(255,255,255,0.03);
+      --nav: rgba(6,8,24,0.8);
+      --border: rgba(255,255,255,0.08);
+      --border-focus: rgba(108,99,255,0.55);
+      --primary: #6c63ff;
+      --primary-light: #9d97ff;
+      --text: #f1f5f9;
+      --text-dim: #94a3b8;
+      --muted: #475569;
+      --danger: #f87171;
+      --danger-bg: rgba(248,113,113,0.08);
+      --danger-border: rgba(248,113,113,0.22);
+      --radius: 12px;
     }
+
     body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
-    nav { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 2rem; display: flex; align-items: center; height: 60px; gap: 1rem; }
-    .nav-brand { font-weight: 700; font-size: 1.1rem; color: var(--primary); }
-    .nav-sep { color: var(--border); }
-    .nav-page { color: var(--muted); font-size: 0.9rem; }
-    main { max-width: 620px; margin: 3rem auto; padding: 0 1.5rem; }
-    h1 { font-size: 1.5rem; font-weight: 700; margin-bottom: 0.4rem; }
-    .subtitle { color: var(--muted); font-size: 0.9rem; margin-bottom: 2rem; }
-
-    .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 2rem; }
-    .form-group { margin-bottom: 1.5rem; }
-    label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.4rem; color: var(--text); }
-    .hint { font-size: 0.78rem; color: var(--muted); margin-top: 0.25rem; }
-    input[type="text"], input[type="url"] {
-      width: 100%; background: var(--bg); border: 1px solid var(--border); color: var(--text);
-      padding: 0.65rem 0.9rem; border-radius: 7px; font-size: 0.9rem; outline: none; transition: border 0.2s;
+    body::before {
+      content: '';
+      position: fixed;
+      width: 500px; height: 500px;
+      background: radial-gradient(circle at center, rgba(108,99,255,0.09) 0%, transparent 65%);
+      top: -100px; right: -80px;
+      pointer-events: none;
     }
-    input:focus { border-color: var(--primary); }
-    input.error-input { border-color: var(--danger); }
 
-    /* Redirect URIs dynamic list */
+    nav {
+      background: var(--nav);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 1.75rem;
+      display: flex; align-items: center;
+      height: 60px; gap: 0.65rem;
+      position: sticky; top: 0; z-index: 50;
+    }
+    .nav-brand {
+      display: flex; align-items: center; gap: 0.5rem;
+      font-weight: 700; font-size: 0.9rem; color: var(--text);
+      text-decoration: none; letter-spacing: -0.02em;
+    }
+    .nav-brand-icon { width: 28px; height: 28px; background: rgba(108,99,255,0.14); border: 1px solid rgba(108,99,255,0.2); border-radius: 7px; display: flex; align-items: center; justify-content: center; color: var(--primary-light); }
+    .nav-brand-icon svg { width: 14px; height: 14px; stroke-width: 2; }
+    .nav-sep { color: rgba(255,255,255,0.15); }
+    .nav-page { display: flex; align-items: center; gap: 0.35rem; color: var(--text-dim); font-size: 0.84rem; }
+    .nav-page svg { width: 13px; height: 13px; stroke-width: 2; }
+
+    main { max-width: 620px; margin: 2.5rem auto; padding: 0 1.5rem; }
+    .page-title { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.03em; margin-bottom: 0.3rem; }
+    .page-title span { color: var(--primary-light); }
+    .subtitle { color: var(--muted); font-size: 0.84rem; margin-bottom: 2rem; line-height: 1.6; }
+
+    .card {
+      background: var(--surface);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 2rem;
+      position: relative;
+      box-shadow: 0 16px 48px rgba(0,0,0,0.35);
+    }
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 10%; right: 10%;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(108,99,255,0.4), transparent);
+    }
+
+    .form-group { margin-bottom: 1.5rem; }
+    label { display: block; font-size: 0.78rem; font-weight: 600; color: var(--text-dim); margin-bottom: 0.4rem; }
+    .hint { font-size: 0.75rem; color: var(--muted); margin-top: 0.28rem; line-height: 1.5; }
+
+    .input-wrap { position: relative; display: flex; align-items: center; }
+    .input-icon { position: absolute; left: 0.72rem; color: var(--muted); display: flex; align-items: center; pointer-events: none; }
+    .input-icon svg { width: 14px; height: 14px; stroke-width: 2; }
+    input[type="text"], input[type="url"] {
+      width: 100%;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 0.65rem 0.85rem 0.65rem 2.3rem;
+      border-radius: var(--radius);
+      font-size: 0.875rem; outline: none;
+      transition: all 0.18s ease; font-family: inherit;
+    }
+    input::placeholder { color: var(--muted); }
+    input:focus { border-color: var(--border-focus); background: rgba(108,99,255,0.04); box-shadow: 0 0 0 3px rgba(108,99,255,0.1); }
+    input.error-input { border-color: rgba(248,113,113,0.45); }
+
+    /* URI rows */
     .uri-list { display: flex; flex-direction: column; gap: 0.5rem; }
-    .uri-row { display: flex; gap: 0.5rem; align-items: center; }
-    .uri-row input { flex: 1; }
-    .remove-uri { background: transparent; border: 1px solid var(--border); color: var(--muted); width: 32px; height: 32px; border-radius: 6px; cursor: pointer; font-size: 1rem; flex-shrink: 0; transition: all 0.2s; display: flex; align-items: center; justify-content: center; }
-    .remove-uri:hover { border-color: var(--danger); color: var(--danger); }
-    .add-uri { background: transparent; border: 1px dashed var(--border); color: var(--muted); padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; font-size: 0.83rem; margin-top: 0.25rem; transition: all 0.2s; width: 100%; }
-    .add-uri:hover { border-color: var(--primary); color: var(--primary); }
+    .uri-row { display: flex; gap: 0.45rem; align-items: center; }
+    .uri-row .input-wrap { flex: 1; }
+    .remove-uri {
+      display: flex; align-items: center; justify-content: center;
+      width: 33px; height: 33px;
+      background: rgba(248,113,113,0.07);
+      border: 1px solid rgba(248,113,113,0.18);
+      color: var(--danger); border-radius: 8px;
+      cursor: pointer; transition: all 0.18s; flex-shrink: 0;
+    }
+    .remove-uri svg { width: 14px; height: 14px; stroke-width: 2; }
+    .remove-uri:hover { background: rgba(248,113,113,0.14); border-color: rgba(248,113,113,0.35); }
+    .add-uri {
+      display: flex; align-items: center; justify-content: center; gap: 0.4rem;
+      background: rgba(255,255,255,0.03);
+      border: 1px dashed rgba(255,255,255,0.1);
+      color: var(--muted);
+      padding: 0.5rem 1rem;
+      border-radius: var(--radius);
+      cursor: pointer; font-size: 0.82rem;
+      margin-top: 0.35rem; transition: all 0.18s; width: 100%; font-family: inherit;
+    }
+    .add-uri svg { width: 14px; height: 14px; stroke-width: 2; }
+    .add-uri:hover { border-color: rgba(108,99,255,0.35); color: var(--primary-light); background: rgba(108,99,255,0.05); }
 
-    /* Actions */
-    .form-actions { display: flex; gap: 0.75rem; margin-top: 2rem; }
-    .btn-primary { background: var(--primary); color: #fff; border: none; padding: 0.65rem 1.4rem; border-radius: 8px; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: background 0.2s; flex: 1; }
-    .btn-primary:hover:not(:disabled) { background: var(--primary-hover); }
-    .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
-    .btn-cancel { background: transparent; border: 1px solid var(--border); color: var(--muted); padding: 0.65rem 1.4rem; border-radius: 8px; font-size: 0.9rem; cursor: pointer; transition: all 0.2s; text-decoration: none; display: inline-block; text-align: center; }
-    .btn-cancel:hover { border-color: var(--text); color: var(--text); }
+    .form-actions { display: flex; gap: 0.65rem; margin-top: 1.75rem; }
+    .btn-primary {
+      display: flex; align-items: center; justify-content: center; gap: 0.4rem;
+      background: linear-gradient(135deg, #6c63ff, #8b5cf6);
+      color: #fff; border: none;
+      padding: 0.68rem 1.4rem; border-radius: var(--radius);
+      font-size: 0.875rem; font-weight: 600;
+      cursor: pointer; transition: all 0.18s;
+      flex: 1; box-shadow: 0 4px 12px rgba(108,99,255,0.3);
+      font-family: inherit;
+    }
+    .btn-primary svg { width: 15px; height: 15px; stroke-width: 2.5; }
+    .btn-primary:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(108,99,255,0.4); }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-cancel {
+      display: flex; align-items: center; gap: 0.35rem;
+      background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+      color: var(--text-dim); padding: 0.68rem 1.4rem;
+      border-radius: var(--radius); font-size: 0.875rem;
+      cursor: pointer; transition: all 0.18s;
+      text-decoration: none; text-align: center; font-family: inherit;
+    }
+    .btn-cancel svg { width: 14px; height: 14px; stroke-width: 2; }
+    .btn-cancel:hover { border-color: rgba(255,255,255,0.18); color: var(--text); }
 
-    .error-msg { background: rgba(239,68,68,0.1); border: 1px solid var(--danger); color: var(--danger); padding: 0.75rem 1rem; border-radius: 7px; font-size: 0.85rem; margin-bottom: 1.25rem; display: none; }
-    .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; margin-right: 6px; vertical-align: middle; }
+    .error-msg {
+      display: flex; align-items: flex-start; gap: 0.5rem;
+      background: var(--danger-bg); border: 1px solid var(--danger-border);
+      color: var(--danger); padding: 0.65rem 0.85rem;
+      border-radius: var(--radius); font-size: 0.82rem; margin-bottom: 1.25rem;
+    }
+    .error-msg svg { width: 14px; height: 14px; flex-shrink: 0; margin-top: 1px; stroke-width: 2.5; }
+
+    .spinner { width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.6s linear infinite; flex-shrink: 0; }
     @keyframes spin { to { transform: rotate(360deg); } }
   </style>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
   <nav>
-    <a href="/developer" class="nav-brand">⚡ Developer Portal</a>
+    <a href="/developer" class="nav-brand">
+      <div class="nav-brand-icon"><i data-lucide="code-2"></i></div>
+      Developer Portal
+    </a>
     <span class="nav-sep">/</span>
-    <span class="nav-page">Register New App</span>
+    <span class="nav-page"><i data-lucide="plus-circle"></i> Register New App</span>
   </nav>
 
   <main>
-    <h1>Register OAuth App</h1>
-    <p class="subtitle">Your app will receive a client_id and client_secret to use the OAuth 2.0 flow.</p>
+    <div class="page-title">Register <span>OAuth App</span></div>
+    <p class="subtitle">Your app will receive a client ID and secret to integrate with the OAuth 2.0 authorization flow.</p>
 
     <div class="card">
-      <div class="error-msg" id="error-msg"></div>
+      <div class="error-msg" id="error-msg" style="display:none">
+        <i data-lucide="alert-circle"></i>
+        <span id="error-text"></span>
+      </div>
 
       <form id="register-form" novalidate>
         <div class="form-group">
           <label for="name">App Name *</label>
-          <input type="text" id="name" name="name" placeholder="e.g. CollabDocs" maxlength="100" autocomplete="off" />
-          <div class="hint">2–100 characters. This is shown to users during login.</div>
+          <div class="input-wrap">
+            <span class="input-icon"><i data-lucide="app-window"></i></span>
+            <input type="text" id="name" name="name" placeholder="e.g. CollabDocs" maxlength="100" autocomplete="off" />
+          </div>
+          <div class="hint">2–100 characters. Shown to users on the OAuth login screen.</div>
         </div>
 
         <div class="form-group">
           <label>Redirect URIs *</label>
           <div class="uri-list" id="uri-list">
             <div class="uri-row">
-              <input type="url" placeholder="http://localhost:5173/auth/callback" />
-              <button type="button" class="remove-uri" onclick="removeUri(this)" title="Remove">×</button>
+              <div class="input-wrap">
+                <span class="input-icon"><i data-lucide="link"></i></span>
+                <input type="url" placeholder="http://localhost:5173/auth/callback" />
+              </div>
+              <button type="button" class="remove-uri" onclick="removeUri(this)" title="Remove">
+                <i data-lucide="x"></i>
+              </button>
             </div>
           </div>
-          <button type="button" class="add-uri" onclick="addUri()">+ Add another redirect URI</button>
+          <button type="button" class="add-uri" onclick="addUri()">
+            <i data-lucide="plus"></i>
+            Add another redirect URI
+          </button>
           <div class="hint">Only these URLs are allowed as OAuth callback destinations.</div>
         </div>
 
         <div class="form-actions">
-          <a href="/developer" class="btn-cancel">Cancel</a>
-          <button type="submit" class="btn-primary" id="submit-btn">Register App</button>
+          <a href="/developer" class="btn-cancel"><i data-lucide="arrow-left"></i> Cancel</a>
+          <button type="submit" class="btn-primary" id="submit-btn">
+            <i data-lucide="rocket"></i>
+            Register App
+          </button>
         </div>
       </form>
     </div>
   </main>
 
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
   <script>
+    lucide.createIcons();
+
     function addUri() {
       const list = document.getElementById('uri-list');
-      const row = document.createElement('div');
+      const row  = document.createElement('div');
       row.className = 'uri-row';
-      row.innerHTML = `<input type="url" placeholder="https://your-app.com/auth/callback" />
-        <button type="button" class="remove-uri" onclick="removeUri(this)" title="Remove">×</button>`;
+      row.innerHTML = `
+        <div class="input-wrap">
+          <span class="input-icon"><i data-lucide="link"></i></span>
+          <input type="url" placeholder="https://your-app.com/auth/callback" />
+        </div>
+        <button type="button" class="remove-uri" onclick="removeUri(this)" title="Remove">
+          <i data-lucide="x"></i>
+        </button>`;
       list.appendChild(row);
+      lucide.createIcons();
       row.querySelector('input').focus();
     }
 
@@ -115,11 +253,10 @@
 
     document.getElementById('register-form').addEventListener('submit', async (e) => {
       e.preventDefault();
-      const name = document.getElementById('name').value.trim();
-      const uriInputs = document.querySelectorAll('#uri-list input');
+      const name         = document.getElementById('name').value.trim();
+      const uriInputs    = document.querySelectorAll('#uri-list input');
       const redirect_uris = [...uriInputs].map(i => i.value.trim()).filter(Boolean);
 
-      // Basic client-side validation
       if (name.length < 2) { showError('App name must be at least 2 characters.'); return; }
       if (redirect_uris.length === 0) { showError('At least one redirect URI is required.'); return; }
       for (const uri of redirect_uris) {
@@ -127,36 +264,28 @@
       }
 
       const btn = document.getElementById('submit-btn');
-      btn.disabled = true;
-      btn.innerHTML = '<span class="spinner"></span>Registering…';
+      btn.disabled  = true;
+      btn.innerHTML = '<div class="spinner"></div> Registering…';
       hideError();
 
       try {
-        const res = await fetch('/api/developer/clients', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({ name, redirect_uris }),
-        });
+        const res  = await fetch('/api/developer/clients', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ name, redirect_uris }) });
         const data = await res.json();
-
-        if (!res.ok) { showError(data.error || 'Registration failed'); btn.disabled = false; btn.textContent = 'Register App'; return; }
-
-        // Store credentials in sessionStorage — dashboard will show them in modal
-        sessionStorage.setItem('new_client_credentials', JSON.stringify({
-          client_id: data.client_id,
-          client_secret: data.client_secret,
-          name: data.name,
-        }));
+        if (!res.ok) { showError(data.error || 'Registration failed'); btn.disabled = false; btn.innerHTML = '<i data-lucide="rocket"></i> Register App'; lucide.createIcons(); return; }
+        sessionStorage.setItem('new_client_credentials', JSON.stringify({ client_id: data.client_id, client_secret: data.client_secret, name: data.name }));
         window.location.href = '/developer';
-      } catch (err) {
+      } catch {
         showError('Network error. Please try again.');
-        btn.disabled = false;
-        btn.textContent = 'Register App';
+        btn.disabled  = false;
+        btn.innerHTML = '<i data-lucide="rocket"></i> Register App';
+        lucide.createIcons();
       }
     });
 
-    function showError(msg) { const el = document.getElementById('error-msg'); el.textContent = msg; el.style.display = 'block'; }
+    function showError(msg) {
+      document.getElementById('error-text').textContent = msg;
+      document.getElementById('error-msg').style.display = 'flex';
+    }
     function hideError() { document.getElementById('error-msg').style.display = 'none'; }
   </script>
 </body>
