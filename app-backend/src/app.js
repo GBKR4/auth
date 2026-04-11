@@ -9,7 +9,8 @@ import cookieParser from 'cookie-parser';
 import { notFound, errorHandler } from './middlewares/errorHandler.js';
 import { requestId } from './middlewares/requestId.js';
 import routes from './routes/index.js';
-import developerRouter from './routes/developer.js';
+import developerApiRouter from './routes/developer-api.js';  // JSON API routes
+import developerUiRouter  from './routes/developer.js';      // HTML page routes
 import oauthRouter from './routes/oauth.js';
 import OAuthAuthCode from './models/OAuthAuthCode.js';
 import logger from './utils/logger.js';
@@ -57,7 +58,11 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc:  ["'self'"],
-      scriptSrc:   ["'self'", "'unsafe-inline'"],
+      // 'unsafe-inline' is needed for inline <script> blocks in the OAuth/developer HTML pages.
+      // https://unpkg.com is required for the Lucide icon library used by those pages.
+      // TODO (post-launch): self-host Lucide and move inline scripts to external files
+      //   so both 'unsafe-inline' and the CDN allowlist can be removed.
+      scriptSrc:   ["'self'", "'unsafe-inline'", 'https://unpkg.com'],
       styleSrc:    ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
       fontSrc:     ["'self'", 'https://fonts.gstatic.com'],
       imgSrc:      ["'self'", 'data:', 'https:'],
@@ -94,10 +99,10 @@ app.get('/reset-password/:token', (_req, res) =>
 );
 
 // ── Routes ───────────────────────────────────────────────────────────────────
-app.use('/api', routes);                              // REST API
-app.use('/api/developer', developerRouter);           // Developer Portal API
-app.use('/developer', developerRouter);               // Developer Portal UI
-app.use('/oauth', oauthRouter);                       // OAuth 2.0 Authorization Server
+app.use('/api', routes);                               // REST API
+app.use('/api/developer', developerApiRouter);         // Developer Portal — JSON API
+app.use('/developer',     developerUiRouter);          // Developer Portal — HTML pages
+app.use('/oauth', oauthRouter);                        // OAuth 2.0 Authorization Server
 
 // ── Cleanup job: remove expired OAuth auth codes every 6 hours ───────────────
 const SIX_HOURS = 6 * 60 * 60 * 1000;

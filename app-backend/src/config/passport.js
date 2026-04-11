@@ -37,20 +37,36 @@ passport.use(new GoogleStrategy({
           is_verified: true
         });
       } else {
-        // Create new user
-        const username = email.split('@')[0] + '_' + Math.floor(Math.random() * 1000);
-        user = await User.create({
+        // Generate a username from the email prefix + random suffix.
+        // Retry once with a longer UUID-based suffix if there is a collision.
+        const baseUsername = email.split('@')[0].replace(/[^a-zA-Z0-9_-]/g, '_');
+        let username = `${baseUsername}_${Math.floor(Math.random() * 10000)}`;
+
+        const attemptCreate = async (uname) => User.create({
           email,
-          username,
-          password_hash: null, // Google users don't have passwords
-          first_name: firstName,
-          last_name: lastName,
-          google_id: profile.id,
-          auth_provider: 'google',
+          username:       uname,
+          password_hash:  null,
+          first_name:     firstName,
+          last_name:       lastName,
+          google_id:      profile.id,
+          auth_provider:  'google',
           profile_picture: profilePicture,
-          is_verified: true,
-          role: 'user'
+          is_verified:    true,
+          role:           'user',
         });
+
+        try {
+          user = await attemptCreate(username);
+        } catch (createErr) {
+          if (createErr.code === '23505') {
+            // Username collision — use a UUID-based suffix that is practically unique
+            const { randomUUID } = await import('crypto');
+            username = `${baseUsername}_${randomUUID().replace(/-/g, '').slice(0, 8)}`;
+            user = await attemptCreate(username);
+          } else {
+            throw createErr;
+          }
+        }
       }
     }
     

@@ -3,6 +3,10 @@
   "version": "1.0.0",
   "description": "Authentication API with JWT, email verification, and PostgreSQL",
   "type": "module",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
   "scripts": {
     "dev": "nodemon server.js",
     "start": "node server.js",

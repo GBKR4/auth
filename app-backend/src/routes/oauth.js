@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import * as oauthController from '../controllers/oauthController.js';
 import { authenticateToken } from '../middlewares/auth.js';
+import { loginLimiter, oauthExchangeLimiter } from '../middlewares/rateLimiter.js';
 
 const router = Router();
 
@@ -10,14 +11,14 @@ router.get('/authorize', oauthController.authorize);
 // Registration page — for new users coming from OAuth login screen
 router.get('/register', oauthController.registerPage);
 
-// Login form submission during OAuth flow
-router.post('/login', oauthController.handleLogin);
+// Login form submission during OAuth flow — rate limited to block brute-force
+router.post('/login', loginLimiter, oauthController.handleLogin);
 
-// Token endpoint — exchange auth code for tokens
-router.post('/token', oauthController.token);
+// Token endpoint — exchange auth code for tokens (tight limit; single-use codes)
+router.post('/token', oauthExchangeLimiter, oauthController.token);
 
-// Refresh token endpoint — rotate tokens
-router.post('/refresh', oauthController.refresh);
+// Refresh token endpoint — rotate tokens (same tight limit)
+router.post('/refresh', oauthExchangeLimiter, oauthController.refresh);
 
 // Userinfo endpoint — returns user profile (requires valid access token)
 router.get('/userinfo', authenticateToken, oauthController.userinfo);

@@ -78,7 +78,16 @@ server.on('error', (error) => {
 // ── Graceful shutdown ─────────────────────────────────────────────────────────
 const shutdown = (signal) => {
   logger.info(`${signal} received — closing server…`);
+
+  // Force-exit if graceful shutdown takes too long (e.g. hung keep-alive connections)
+  const forceExit = setTimeout(() => {
+    logger.fatal('Graceful shutdown timed out after 10 s — forcing exit');
+    process.exit(1);
+  }, 10_000);
+  forceExit.unref(); // Don't prevent Node from exiting if everything closes cleanly
+
   server.close(async () => {
+    clearTimeout(forceExit);
     try {
       await getPool().end();
       logger.info('Database pool closed');

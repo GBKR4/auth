@@ -19,8 +19,8 @@ export const registerValidation = [
   body('username')
     .isLength({ min: 3, max: 30 })
     .trim()
-    .isAlphanumeric()
-    .withMessage('Username must be 3-30 alphanumeric characters'),
+    .matches(/^[a-zA-Z0-9_-]+$/)
+    .withMessage('Username must be 3-30 characters (letters, numbers, _ and - allowed)'),
   body('password')
     .isLength({ min: 8 })
     .withMessage('Password must be at least 8 characters')
@@ -98,8 +98,8 @@ export const profileUpdateValidation = [
     .optional()
     .isLength({ min: 3, max: 30 })
     .trim()
-    .isAlphanumeric()
-    .withMessage('Username must be 3-30 alphanumeric characters'),
+    .matches(/^[a-zA-Z0-9_-]+$/)
+    .withMessage('Username must be 3-30 characters (letters, numbers, _ and - allowed)'),
   validate
 ];
 

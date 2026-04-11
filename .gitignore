@@ -4,3 +4,9 @@ node_modules/
 .DS_Store
 dist/
 build/
+
+# PM2 log files — directory is kept via logs/.gitkeep but actual logs are excluded
+app-backend/logs/*.log
+
+# Dev-only database helper — should not be deployed or committed
+app-backend/restore-client.mjs

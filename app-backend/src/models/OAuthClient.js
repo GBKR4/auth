@@ -60,10 +60,18 @@ export const findByIdAndDeveloper = async (id, developerId) => {
 };
 
 /**
- * Verify a raw client secret against the stored hash
+ * Verify a raw client secret against the stored hash.
+ * Uses crypto.timingSafeEqual to prevent timing-based side-channel attacks.
  */
 export const verifySecret = (rawSecret, storedHash) => {
-  return hashSecret(rawSecret) === storedHash;
+  try {
+    const computed = Buffer.from(hashSecret(rawSecret), 'hex');
+    const stored   = Buffer.from(storedHash,            'hex');
+    if (computed.length !== stored.length) return false;
+    return crypto.timingSafeEqual(computed, stored);
+  } catch {
+    return false;
+  }
 };
 
 /**

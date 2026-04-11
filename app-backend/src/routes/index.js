@@ -15,7 +15,14 @@ router.use(apiLimiter);
 router.get('/health', async (req, res) => {
   try {
     await getPool().query('SELECT 1');
-    res.json({ status: 'ok', db: 'connected', uptime: process.uptime() });
+    res.json({
+      status:  'ok',
+      db:      'connected',
+      uptime:  Math.floor(process.uptime()),
+      env:     process.env.NODE_ENV || 'development',
+      version: process.env.npm_package_version || '1.0.0',
+      ts:      new Date().toISOString(),
+    });
   } catch {
     res.status(503).json({ status: 'error', db: 'disconnected' });
   }
