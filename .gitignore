@@ -9,4 +9,7 @@ build/
 app-backend/logs/*.log
 
 # Dev-only database helper — should not be deployed or committed
-app-backend/restore-client.mjs
+app-backend/restore-client.mjs
+
+implementation_plan.md
+GOOGLE_OAUTH_FIX.txt
